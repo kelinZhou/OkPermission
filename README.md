@@ -51,5 +51,5 @@ OkPermission.instance.applyPermissions(R.string.request_permission_explain, Mani
     }
 }
 ```
-
+* * *
 **如果你觉得该库对你有用，欢迎给和Star。感谢！！！**
