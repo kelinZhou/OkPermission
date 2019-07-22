@@ -34,6 +34,12 @@ class OkPermission private constructor(
     companion object {
         private const val ROUTER_TAG = "ok_permission_apply_permissions_router_tag"
 
+        /**
+         * 创建OkPermission并依附于Activity。
+         *
+         * @param activity 当前的Activity对象。
+         * @param explain 当用户拒绝权限后的解释。
+         */
         fun with(activity: Activity, explain: String? = null): OkPermission {
             return OkPermission(WeakReference(activity), explain)
         }
@@ -74,8 +80,8 @@ class OkPermission private constructor(
         vararg permissions: String,
         listener: (permissions: Array<out String>) -> Unit
     ) {
-        val function: (Boolean, Array<out String>) -> Unit = { _, permissions ->
-            listener(permissions)
+        val function: (Boolean, Array<out String>) -> Unit = { _, ps ->
+            listener(ps)
         }
         val targetPermissions = permissions.map { Permission.create(it, false) }.toTypedArray()
         checkPermissionsRegistered(targetPermissions, function)
@@ -111,8 +117,8 @@ class OkPermission private constructor(
         vararg permissions: String,
         listener: (permissions: Array<out String>) -> Unit
     ) {
-        val function: (Boolean, Array<out String>) -> Unit = { _, permissions ->
-            listener(permissions)
+        val function: (Boolean, Array<out String>) -> Unit = { _, ps ->
+            listener(ps)
         }
         val targetPermissions = permissions.map { Permission.create(it, true) }.toTypedArray()
         checkPermissionsRegistered(targetPermissions, function)
@@ -234,7 +240,7 @@ class OkPermission private constructor(
             if (!text.isNullOrEmpty()) { //如果有解释内容
                 explain = null
                 //展示解释内容
-                showRequestPermissionsExplain(force, text) { isContinue ->
+                showRequestPermissionsExplain(text) { isContinue ->
                     continueRequest(
                         isContinue,
                         deniedPermissions,
@@ -253,20 +259,18 @@ class OkPermission private constructor(
                 val text = explain
                 if (!text.isNullOrEmpty()) {
                     explain = null
-                    showRequestPermissionsExplain(force, text) { isContinue ->
+                    showRequestPermissionsExplain(text) { isContinue ->
                         if (isContinue) {
                             showMissingPermissionDialog(
-                                force,
                                 deniedPermissions,
                                 listener
                             )
                         } else {
-                            listener(true, deniedPermissions.map { it.permission }.toTypedArray())
+                            listener(false, deniedPermissions.map { it.permission }.toTypedArray())
                         }
                     }
                 } else {
                     showMissingPermissionDialog(
-                        force,
                         deniedPermissions,
                         listener
                     )
@@ -293,7 +297,6 @@ class OkPermission private constructor(
     }
 
     private fun showRequestPermissionsExplain(
-        force: Boolean,
         explain: String,
         listener: (isContinue: Boolean) -> Unit
     ) {
@@ -303,18 +306,13 @@ class OkPermission private constructor(
                 .setCancelable(false)
                 .setTitle("提示")
                 .setMessage(explain)
-                .apply {
-                    if (!force) {
-                        setNegativeButton("取消") { _, _ -> listener(false) }
-                    }
-                }
+                .setNegativeButton("取消") { _, _ -> listener(false) }
                 .setPositiveButton("继续") { _, _ -> listener(true) }
                 .show()
         }
     }
 
     private fun showMissingPermissionDialog(
-        force: Boolean,
         deniedPermissions: Array<out Permission>,
         listener: (granted: Boolean, permissions: Array<out String>) -> Unit
     ) {
@@ -324,15 +322,8 @@ class OkPermission private constructor(
                 .setCancelable(false)
                 .setTitle("帮助")
                 .setMessage("当前操作缺少必要权限。\n请点击\"设置\"-\"权限\"-打开所需权限。\n最后点击两次后退按钮，即可返回。")
-                .apply {
-                    if (!force) {
-                        setNegativeButton("退出") { _, _ ->
-                            listener(
-                                true,
-                                deniedPermissions.map { it.permission }.toTypedArray()
-                            )
-                        }
-                    }
+                .setNegativeButton("退出") { _, _ ->
+                    listener(false, deniedPermissions.map { it.permission }.toTypedArray())
                 }
                 .setPositiveButton("设置") { _, _ ->
                     OkActivityResult.instance.startActivityForResult(
