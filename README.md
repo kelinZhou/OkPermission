@@ -67,7 +67,8 @@ OkPermission.with(this, "为了更好的服务于您，请允许我们需要的�
 
 如果在你想要申请的所有权限中，有些权限是必须的而有些权限是非必须的，你可以像下面这样做。
 ```kotlin
-OkPermission.with(this, getString(R.string.request_permission_explain)).mixApplyPermissions(
+OkPermission.with(this, getString(R.string.request_permission_explain))
+            .mixApplyPermissions(
                 Permission.create(Manifest.permission.CALL_PHONE, true),
                 Permission.create(Manifest.permission.CAMERA, false)
             ) { granted, permissions ->
