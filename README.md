@@ -51,6 +51,7 @@ OkPermission.with(this, "为了更好的服务于您，请允许我们需要的�
 ```
 
 如果你要申请的权限都是必要权限，你想要暴力的让用户同意你所有的权限可以像下面这样做。
+这样使用的话会一直提示用户授予权限，直到用户授予了全部权限或点击了不在询问后才会停止提示用户。
 ```kotlin
 OkPermission.with(this, "为了更好的服务于您，请允许我们需要的权限。")
             .forceApplyPermissions(Manifest.permission.CALL_PHONE, Manifest.permission.CAMERA){ permissions ->
@@ -61,9 +62,6 @@ OkPermission.with(this, "为了更好的服务于您，请允许我们需要的�
                 }
             }
 ```
-这样使用的话会一直提示用户授予权限，直到用户授予了全部权限或点击了不在询问后再回停止提示用户。
-
-
 
 如果在你想要申请的所有权限中，有些权限是必须的而有些权限是非必须的，你可以像下面这样做。
 ```kotlin
