@@ -1,0 +1,18 @@
+apply plugin: 'java-library'
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    compileOnly "com.android.tools.lint:lint-api:$lintVersion"
+    compileOnly "com.android.tools.lint:lint-checks:$lintVersion"
+}
+
+sourceCompatibility = "7"
+targetCompatibility = "7"
+
+
+jar {
+    manifest {
+        attributes("Lint-Registry-v2": "com.kelin.lint.EleIssueRegistry")
+    }
+}

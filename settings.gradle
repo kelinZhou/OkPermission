@@ -1,1 +1,1 @@
-include ':app', ':okpermission'
+include ':app', ':okpermission', ':lint'

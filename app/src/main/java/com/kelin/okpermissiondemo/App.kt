@@ -12,12 +12,4 @@ import com.kelin.okpermission.OkPermission
  *
  * **版本:** v 1.0.0
  */
-class App:Application() {
-
-    override fun onCreate() {
-        super.onCreate()
-
-        //初始化OkPermission，这一步最好是放在Application的onCreate方法中调用。
-        OkPermission.init(this)
-    }
-}
+class App : Application()

@@ -1,5 +1,7 @@
 package com.kelin.okpermission.router
 
+import com.kelin.okpermission.permission.Permission
+
 /**
  * **描述:** 权限申请路由。
  *
@@ -11,7 +13,7 @@ package com.kelin.okpermission.router
  */
 interface PermissionRequestRouter {
 
-    fun requestPermissions(permissions: Array<out String>, onResult: (permissions: Array<String>, grantResults: IntArray) -> Unit)
+    fun requestPermissions(permissions: Array<out Permission>, onResult: (permissions: Array<out Permission>, grantResults: IntArray) -> Unit)
 
     fun shouldShowRequestPermissionRationale(permission: String): Boolean
 }
