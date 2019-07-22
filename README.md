@@ -6,6 +6,9 @@
 ## 简介
 本库是使用Kotlin语音开发的。可以优雅的申请Android6.0中的动态权限。
 
+## 体验
+点击下载[DemoApk](https://fir.im/kmbz)
+
 ## 下载
 ###### 第一步：添加 JitPack 仓库到你项目根目录的 gradle 文件中。
 ```groovy
