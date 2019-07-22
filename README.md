@@ -73,9 +73,15 @@ OkPermission.with(this, getString(R.string.request_permission_explain))
                 Permission.create(Manifest.permission.CAMERA, false)
             ) { granted, permissions ->
                 when {
-                    permissions.isEmpty() -> Toast.makeText(this, "所有权限已获取", Toast.LENGTH_SHORT).show()
-                    granted -> Toast.makeText(this, "所有必须的权限已获取", Toast.LENGTH_SHORT).show()
-                    else -> Toast.makeText(this, "未获取全部权限", Toast.LENGTH_SHORT).show()
+                    permissions.isEmpty() -> {
+                        Toast.makeText(this, "所有权限已获取", Toast.LENGTH_SHORT).show()
+                    }
+                    granted -> {
+                        Toast.makeText(this, "所有必须的权限已获取", Toast.LENGTH_SHORT).show()
+                    }
+                    else -> {
+                        Toast.makeText(this, "未获取全部权限", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
 ```
