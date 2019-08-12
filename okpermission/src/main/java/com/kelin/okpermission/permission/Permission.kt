@@ -12,6 +12,7 @@ package com.kelin.okpermission.permission
 interface Permission {
     val permission: String
     val necessary: Boolean
+    val isWeak: Boolean
 
     companion object {
         /**
@@ -21,10 +22,24 @@ interface Permission {
          * @param necessary 是否是必要的权限。如果你申请的所有的权限都是必要的权限建议使用 forceApplyPermissions 方法，
          * 如果你要申请的权限全部都是非必要的权限则建议使用 applyPermissions 方法。
          */
-        fun create(permission: String, necessary: Boolean): Permission {
-            return DefaultPermission(permission, necessary)
+        fun createDefault(permission: String, necessary: Boolean): Permission {
+            return DefaultPermission(permission, necessary, false)
+        }
+
+        /**
+         * 创建一个Permission对象。
+         *
+         * @param permission 要申请的权限。
+         * @param weak 是否是弱申请权限，弱申请的权限是优先级最弱的，当用户决绝该权限后就不会有任何提示去引导用户授予。
+         */
+        fun createWeak(permission: String, weak: Boolean): Permission {
+            return DefaultPermission(permission, false, weak)
         }
     }
 
-    data class DefaultPermission(override val permission: String, override val necessary: Boolean) : Permission
+    private data class DefaultPermission(
+        override val permission: String,
+        override val necessary: Boolean,
+        override val isWeak: Boolean
+    ) : Permission
 }
