@@ -49,7 +49,6 @@ class OkPermission private constructor(
     private val activity: Activity?
         get() = weakActivity.get()
 
-
     /**
      * **申请权限。**
      *
@@ -219,7 +218,6 @@ class OkPermission private constructor(
                 } else {
                     processingPartialPermissionsDenied(
                         context,
-                        permissions.any { it.necessary },
                         permissions,
                         listener
                     )
@@ -230,7 +228,6 @@ class OkPermission private constructor(
 
     private fun processingPartialPermissionsDenied(
         context: Activity,
-        force: Boolean,
         deniedPermissions: Array<out Permission>,
         listener: (granted: Boolean, permissions: Array<out String>) -> Unit
     ) {
@@ -249,34 +246,35 @@ class OkPermission private constructor(
                 }
             } else {
                 continueRequest(
-                    force,
+                    deniedPermissions.any { it.necessary },
                     deniedPermissions,
                     listener
                 )
             }
         } else {
-            if (force) {
-                val text = explain
-                if (!text.isNullOrEmpty()) {
-                    explain = null
-                    showRequestPermissionsExplain(text) { isContinue ->
-                        if (isContinue) {
-                            showMissingPermissionDialog(
-                                deniedPermissions,
-                                listener
-                            )
-                        } else {
-                            listener(false, deniedPermissions.map { it.permission }.toTypedArray())
-                        }
+            val text = explain
+            if (!text.isNullOrEmpty()) {
+                explain = null
+                showRequestPermissionsExplain(text) { isContinue ->
+                    if (isContinue) {
+                        showMissingPermissionDialog(
+                            deniedPermissions,
+                            listener
+                        )
+                    } else {
+                        listener(false, deniedPermissions.map { it.permission }.toTypedArray())
                     }
-                } else {
+                }
+            } else {
+                if (deniedPermissions.any { it.necessary }) {
                     showMissingPermissionDialog(
                         deniedPermissions,
                         listener
                     )
+                } else {
+                    listener(true, deniedPermissions.map { it.permission }.toTypedArray())
                 }
-            } else {
-                listener(true, deniedPermissions.map { it.permission }.toTypedArray())
+
             }
         }
     }
