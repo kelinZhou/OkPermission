@@ -1,5 +1,6 @@
 package com.kelin.okpermission
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -49,6 +50,17 @@ class OkPermission private constructor(
 
     private val activity: Activity?
         get() = weakActivity.get()
+
+
+    fun applyApkInstallPermission(canInstall: (canInstall: Boolean) -> Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            applyPermissions(Manifest.permission.REQUEST_INSTALL_PACKAGES) {
+                canInstall(it.isEmpty())
+            }
+        } else {
+            canInstall(true)
+        }
+    }
 
     /**
      * **申请权限。**
@@ -223,38 +235,55 @@ class OkPermission private constructor(
     ) {
         val activity = activity
         if (activity != null) {
-            if (missingPermissionDialogInterceptor == null) {
-                missingPermissionDialogInterceptor = {
-                    AlertDialog.Builder(activity)
-                        .setCancelable(false)
-                        .setTitle("帮助")
-                        .setMessage("当前操作缺少必要权限。\n请点击\"设置\"-\"权限\"-打开所需权限。\n最后点击两次后退按钮，即可返回。")
-                        .setNegativeButton("退出") { _, _ ->
-                            it.continueWorking(false)
-                        }
-                        .setPositiveButton("设置") { _, _ ->
-                            it.continueWorking(true)
-                        }.show()
-                }
-            }
-
-            val deniedPermissions = ArrayList<Permission>()
-            permissions.forEach { permission ->
-                if (ContextCompat.checkSelfPermission(
+            if (permissions.size == 1 && permissions[0].permission == Manifest.permission.REQUEST_INSTALL_PACKAGES) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !activity.packageManager.canRequestPackageInstalls()) {
+                    OkActivityResult.instance.startActivityForResult(
                         activity,
-                        permission.permission
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    deniedPermissions.add(permission)
+                        Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${activity.packageName}"))
+                    ) { _, _ ->
+                        if (activity.packageManager.canRequestPackageInstalls()) {
+                            listener(true, emptyArray())
+                        } else {
+                            listener(false, arrayOf(Manifest.permission.REQUEST_INSTALL_PACKAGES))
+                        }
+                    }
+                } else {
+                    listener(true, emptyArray())
                 }
-            }
-            if (deniedPermissions.isEmpty()) {
-                listener(true, emptyArray())
             } else {
-                requestPermissions(
-                    deniedPermissions.toTypedArray(),
-                    listener
-                )
+                if (missingPermissionDialogInterceptor == null) {
+                    missingPermissionDialogInterceptor = {
+                        AlertDialog.Builder(activity)
+                            .setCancelable(false)
+                            .setTitle("帮助")
+                            .setMessage("当前操作缺少必要权限。\n请点击\"设置\"-\"权限\"-打开所需权限。\n最后点击两次后退按钮，即可返回。")
+                            .setNegativeButton("退出") { _, _ ->
+                                it.continueWorking(false)
+                            }
+                            .setPositiveButton("设置") { _, _ ->
+                                it.continueWorking(true)
+                            }.show()
+                    }
+                }
+
+                val deniedPermissions = ArrayList<Permission>()
+                permissions.forEach { permission ->
+                    if (ContextCompat.checkSelfPermission(
+                            activity,
+                            permission.permission
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        deniedPermissions.add(permission)
+                    }
+                }
+                if (deniedPermissions.isEmpty()) {
+                    listener(true, emptyArray())
+                } else {
+                    requestPermissions(
+                        deniedPermissions.toTypedArray(),
+                        listener
+                    )
+                }
             }
         }
     }

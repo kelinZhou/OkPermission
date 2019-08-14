@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
                 .weakApplyPermissions(
                     Manifest.permission.CALL_PHONE,
                     Manifest.permission.CAMERA
-                ){ permissions ->
+                ) { permissions ->
                     if (permissions.isEmpty()) {
                         Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
                     } else {
@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
                 .applyPermissions(
                     Manifest.permission.CALL_PHONE,
                     Manifest.permission.CAMERA
-                ){ permissions ->
+                ) { permissions ->
                     if (permissions.isEmpty()) {
                         Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
                     } else {
@@ -110,13 +110,24 @@ class MainActivity : AppCompatActivity() {
                 .applyPermissions(
                     Manifest.permission.CALL_PHONE,
                     Manifest.permission.CAMERA
-                ){ permissions ->
+                ) { permissions ->
                     if (permissions.isEmpty()) {
                         Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(this, "未获取全部权限", Toast.LENGTH_SHORT).show()
                     }
                 }
+        }
+
+        tv7.setOnClickListener {
+            OkPermission.with(this).applyApkInstallPermission { canInstall ->
+                if (canInstall) {
+                    Toast.makeText(this, "可以安装APK了", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "没有安装APK权限", Toast.LENGTH_SHORT).show()
+                }
+
+            }
         }
     }
 }
