@@ -1,5 +1,6 @@
 package com.kelin.okpermission.router
 
+import android.app.Activity
 import com.kelin.okpermission.permission.Permission
 
 /**
@@ -13,7 +14,7 @@ import com.kelin.okpermission.permission.Permission
  */
 interface PermissionRequestRouter {
 
-    fun requestPermissions(permissions: Array<out Permission>, onResult: (permissions: Array<out Permission>, grantResults: IntArray) -> Unit)
+    fun requestPermissions(permissions: Array<out Permission>, onResult: (permissions: Array<out Permission>) -> Unit)
 
     fun shouldShowRequestPermissionRationale(permission: String): Boolean
 }

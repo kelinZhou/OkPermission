@@ -1,5 +1,7 @@
 package com.kelin.okpermission
 
+import java.io.Serializable
+
 /**
  * **描述:** 可继续的。
  *
@@ -9,6 +11,6 @@ package com.kelin.okpermission
  *
  * **版本:** v 1.0.0
  */
-interface Renewable {
+interface Renewable : Serializable {
     fun continueWorking(isContinue: Boolean)
 }

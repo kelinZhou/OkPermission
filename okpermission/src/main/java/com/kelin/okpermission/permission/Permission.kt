@@ -9,10 +9,11 @@ package com.kelin.okpermission.permission
  *
  * **版本:** v 1.0.0
  */
-interface Permission {
-    val permission: String
-    val necessary: Boolean
-    val isWeak: Boolean
+abstract class Permission {
+
+    abstract val permission: String
+    abstract val necessary: Boolean
+    abstract val isWeak: Boolean
 
     companion object {
         /**
@@ -41,5 +42,5 @@ interface Permission {
         override val permission: String,
         override val necessary: Boolean,
         override val isWeak: Boolean
-    ) : Permission
+    ) : Permission()
 }

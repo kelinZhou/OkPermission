@@ -2,22 +2,14 @@ package com.kelin.okpermission
 
 import android.Manifest
 import android.app.Activity
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
-import android.os.Bundle
-import android.provider.Settings
-import android.support.v4.app.FragmentActivity
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AlertDialog
-import android.util.SparseArray
+import com.kelin.okpermission.applicant.ApkInstallApplicant
+import com.kelin.okpermission.applicant.DefaultApplicant
+import com.kelin.okpermission.applicant.PermissionsApplicant
+import com.kelin.okpermission.intentgenerator.*
 import com.kelin.okpermission.permission.Permission
-import com.kelin.okpermission.router.BasicRouter
-import com.kelin.okpermission.router.PermissionRequestRouter
-import com.kelin.okpermission.router.SupportBasicRouter
 import java.lang.ref.WeakReference
-import java.util.*
 
 /**
  * **描述:** 权限申请的核心类。
@@ -28,25 +20,34 @@ import java.util.*
  *
  * **版本:** v 1.0.0
  */
-class OkPermission private constructor(
-    private val weakActivity: WeakReference<Activity>,
-    private var explain: String?
-) {
+class OkPermission private constructor(private val weakActivity: WeakReference<Activity>) {
     companion object {
-        private const val ROUTER_TAG = "ok_permission_apply_permissions_router_tag"
 
         /**
          * 创建OkPermission并依附于Activity。
          *
          * @param activity 当前的Activity对象。
-         * @param explain 当用户拒绝权限后的解释。
          */
-        fun with(activity: Activity, explain: String? = null): OkPermission {
-            return OkPermission(WeakReference(activity), explain)
+        fun with(activity: Activity): OkPermission {
+            return OkPermission(WeakReference(activity))
         }
     }
 
+    /**
+     * 权限被授予。
+     */
+    private var permissionGranted: (() -> Unit)? = null
+    /**
+     * 权限被拒绝。
+     */
+    private var permissionDenied: (() -> Unit)? = null
+    /**
+     * 检测权限类型的拦截器。
+     */
+    private var checkPermissionTypeInterceptor: MakeApplicantInterceptor? = null
+
     private var missingPermissionDialogInterceptor: ((renewable: Renewable) -> Unit)? = null
+    private var settingIntentGeneratorInterceptor: (() -> SettingIntentGenerator)? = null
 
     private val activity: Activity?
         get() = weakActivity.get()
@@ -96,8 +97,8 @@ class OkPermission private constructor(
             listener(ps)
         }
         val targetPermissions = permissions.map { Permission.createWeak(it, true) }.toTypedArray()
-        checkPermissionsRegistered(targetPermissions, function)
-        checkPermission(targetPermissions, function)
+        checkPermissionsRegistered(targetPermissions)
+        doOnApplyPermission(targetPermissions, function)
     }
 
     /**
@@ -134,8 +135,8 @@ class OkPermission private constructor(
             listener(ps)
         }
         val targetPermissions = permissions.map { Permission.createDefault(it, false) }.toTypedArray()
-        checkPermissionsRegistered(targetPermissions, function)
-        checkPermission(targetPermissions, function)
+        checkPermissionsRegistered(targetPermissions)
+        doOnApplyPermission(targetPermissions, function)
     }
 
     /**
@@ -171,8 +172,8 @@ class OkPermission private constructor(
             listener(ps)
         }
         val targetPermissions = permissions.map { Permission.createDefault(it, true) }.toTypedArray()
-        checkPermissionsRegistered(targetPermissions, function)
-        checkPermission(targetPermissions, function)
+        checkPermissionsRegistered(targetPermissions)
+        doOnApplyPermission(targetPermissions, function)
     }
 
 
@@ -191,14 +192,11 @@ class OkPermission private constructor(
         vararg permissions: Permission,
         listener: (granted: Boolean, permissions: Array<out String>) -> Unit
     ) {
-        checkPermissionsRegistered(permissions, listener)
-        checkPermission(permissions, listener)
+        checkPermissionsRegistered(permissions)
+        doOnApplyPermission(permissions, listener)
     }
 
-    private fun checkPermissionsRegistered(
-        permissions: Array<out Permission>,
-        listener: (granted: Boolean, permissions: Array<out String>) -> Unit
-    ) {
+    private fun checkPermissionsRegistered(permissions: Array<out Permission>) {
         val context = activity
         if (context != null) {
             val registeredPermissions =
@@ -212,13 +210,22 @@ class OkPermission private constructor(
                     )}\n"
                 )
             }
-        } else {
-            listener(!permissions.any { it.necessary }, permissions.map { it.permission }.toTypedArray())
         }
     }
 
+    /**
+     * 拦截引导跳转到设置页面的弹窗，由自己实现弹窗。该方法必须要在apply等相关申请权限的方法前调用。
+     */
     fun interceptMissingPermissionDialog(interceptor: (renewable: Renewable) -> Unit): OkPermission {
         missingPermissionDialogInterceptor = interceptor
+        return this
+    }
+
+    /**
+     * 拦截设置页面Intent生产器，由自己实现指定页面的跳转。该方法必须要在apply等相关申请权限的方法前调用。
+     */
+    fun interceptSettingIntentGenerator(interceptor: () -> SettingIntentGenerator): OkPermission {
+        settingIntentGeneratorInterceptor = interceptor
         return this
     }
 
@@ -229,339 +236,79 @@ class OkPermission private constructor(
      * @param listener 申请结果的监听。如果回调中的permissions为空则表示所有权限已经被获取，
      * 否则就表示用户拒绝了某个或某些权限，而被拒绝的权限就是permissions集合中的权限。
      */
-    private fun checkPermission(
+    private fun doOnApplyPermission(
         permissions: Array<out Permission>,
         listener: (granted: Boolean, permissions: Array<out String>) -> Unit
     ) {
         val activity = activity
         if (activity != null) {
-            if (permissions.size == 1 && permissions[0].permission == Manifest.permission.REQUEST_INSTALL_PACKAGES) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !activity.packageManager.canRequestPackageInstalls()) {
-                    OkActivityResult.instance.startActivityForResult(
-                        activity,
-                        Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${activity.packageName}"))
-                    ) { _, _ ->
-                        if (activity.packageManager.canRequestPackageInstalls()) {
-                            listener(true, emptyArray())
-                        } else {
-                            listener(false, arrayOf(Manifest.permission.REQUEST_INSTALL_PACKAGES))
-                        }
-                    }
-                } else {
-                    listener(true, emptyArray())
-                }
-            } else {
-                if (missingPermissionDialogInterceptor == null) {
-                    missingPermissionDialogInterceptor = {
-                        AlertDialog.Builder(activity)
-                            .setCancelable(false)
-                            .setTitle("帮助")
-                            .setMessage("当前操作缺少必要权限。\n请点击\"设置\"-\"权限\"-打开所需权限。\n最后点击两次后退按钮，即可返回。")
-                            .setNegativeButton("退出") { _, _ ->
-                                it.continueWorking(false)
-                            }
-                            .setPositiveButton("设置") { _, _ ->
-                                it.continueWorking(true)
-                            }.show()
-                    }
-                }
-
-                val deniedPermissions = ArrayList<Permission>()
-                permissions.forEach { permission ->
-                    if (ContextCompat.checkSelfPermission(
-                            activity,
-                            permission.permission
-                        ) != PackageManager.PERMISSION_GRANTED
-                    ) {
-                        deniedPermissions.add(permission)
-                    }
-                }
-                if (deniedPermissions.isEmpty()) {
-                    listener(true, emptyArray())
-                } else {
-                    requestPermissions(
-                        deniedPermissions.toTypedArray(),
-                        listener
-                    )
-                }
-            }
+            createApplicantManager(permissions)?.startApply(listener)
         }
     }
 
-    private fun requestPermissions(
-        deniedPermissions: Array<out Permission>,
-        listener: (granted: Boolean, permissions: Array<out String>) -> Unit
-    ) {
+    private fun createApplicantManager(permissions: Array<out Permission>): ApplicantManager? {
+        if (permissions.isEmpty()) {
+            throw NullPointerException("The permission is empty!")
+        }
         val context = activity
         if (context != null) {
-            getRouter(context).requestPermissions(deniedPermissions) { permissions, grantResults ->
-                val hadAllPermission = !(grantResults.any { it != PackageManager.PERMISSION_GRANTED })
-                if (hadAllPermission) {
-                    listener(true, emptyArray())
+            val applicants = HashMap<Class<out PermissionsApplicant>, PermissionsApplicant>()
+            permissions.forEach {
+                val applicantClass = if (checkPermissionTypeInterceptor?.interceptMake(it) == true) {
+                    checkPermissionTypeInterceptor!!.makeApplicant(it)
                 } else {
-                    processingPartialPermissionsDenied(
-                        context,
-                        permissions,
-                        listener
-                    )
-                }
-            }
-        }
-    }
-
-    private fun processingPartialPermissionsDenied(
-        context: Activity,
-        deniedPermissions: Array<out Permission>,
-        listener: (granted: Boolean, permissions: Array<out String>) -> Unit
-    ) {
-        val router = getRouter(context)
-        if (deniedPermissions.any { router.shouldShowRequestPermissionRationale(it.permission) }) { //如果有可以继续申请的权限
-            val text = explain
-            if (!text.isNullOrEmpty()) { //如果有解释内容
-                explain = null
-                //展示解释内容
-                showRequestPermissionsExplain(text) { isContinue ->
-                    continueRequest(
-                        isContinue,
-                        deniedPermissions,
-                        listener
-                    )
-                }
-            } else {
-                continueRequest(
-                    deniedPermissions.any { it.necessary },
-                    deniedPermissions,
-                    listener
-                )
-            }
-        } else {
-            val text = explain
-            if (!text.isNullOrEmpty()) {
-                explain = null
-                showRequestPermissionsExplain(text) { isContinue ->
-                    if (isContinue) {
-                        showMissingPermissionDialog(
-                            deniedPermissions,
-                            listener
-                        )
-                    } else {
-                        continueRequest(
-                            false,
-                            deniedPermissions,
-                            listener
-                        )
-                    }
-                }
-            } else {
-                if (deniedPermissions.all { it.isWeak }) {  //如果全部都是弱申请
-                    continueRequest(
-                        false,
-                        deniedPermissions,
-                        listener
-                    )
-                } else {
-                    showMissingPermissionDialog(
-                        deniedPermissions,
-                        listener
-                    )
-                }
-            }
-        }
-    }
-
-    private fun continueRequest(
-        isContinue: Boolean,
-        deniedPermissions: Array<out Permission>,
-        listener: (granted: Boolean, permissions: Array<out String>) -> Unit
-    ) {
-        if (isContinue) {
-            requestPermissions(deniedPermissions, listener)
-        } else {
-            listener(
-                !deniedPermissions.any { it.necessary },
-                deniedPermissions.map { it.permission }.toTypedArray()
-            )
-        }
-    }
-
-    private fun showRequestPermissionsExplain(
-        explain: String,
-        listener: (isContinue: Boolean) -> Unit
-    ) {
-        val activity = activity
-        if (activity != null) {
-            AlertDialog.Builder(activity)
-                .setCancelable(false)
-                .setTitle("提示")
-                .setMessage(explain)
-                .setNegativeButton("取消") { _, _ -> listener(false) }
-                .setPositiveButton("继续") { _, _ -> listener(true) }
-                .show()
-        }
-    }
-
-    private fun showMissingPermissionDialog(
-        deniedPermissions: Array<out Permission>,
-        listener: (granted: Boolean, permissions: Array<out String>) -> Unit
-    ) {
-        val interceptor = missingPermissionDialogInterceptor
-        if (interceptor != null) {
-            interceptor.invoke(object : Renewable {
-                override fun continueWorking(isContinue: Boolean) {
-                    if (isContinue) {
-                        val activity = activity
-                        if (activity != null) {
-                            OkActivityResult.instance.startActivityForResult(
-                                activity,
-                                Intent(
-                                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                    Uri.parse("package:" + activity.packageName)
-                                )
-                            ) { _, _ ->
-                                requestPermissions(deniedPermissions, listener)
-                            }
+                    when (it.permission) {
+                        Manifest.permission.REQUEST_INSTALL_PACKAGES -> {
+                            ApkInstallApplicant::class.java
                         }
-                    } else {
-                        listener(false, deniedPermissions.map { it.permission }.toTypedArray())
+                        else -> {
+                            DefaultApplicant::class.java
+                        }
                     }
                 }
-            })
-        } else {
-            throw NullPointerException("The missingPermissionDialogInterceptor is Null object.")
-        }
-    }
-
-    private fun getRouter(context: Activity): PermissionRequestRouter {
-        return findRouter(context) ?: createRouter(context)
-    }
-
-    private fun createRouter(activity: Activity): PermissionRequestRouter {
-        val router: PermissionRequestRouter
-        if (activity is FragmentActivity) {
-            router = SupportPermissionRouter()
-            val fm = activity.supportFragmentManager
-            fm.beginTransaction()
-                .add(router, ROUTER_TAG)
-                .commitAllowingStateLoss()
-            fm.executePendingTransactions()
-        } else {
-            router = PermissionRouter()
-            val fm = activity.fragmentManager
-            fm.beginTransaction()
-                .add(router, ROUTER_TAG)
-                .commitAllowingStateLoss()
-            fm.executePendingTransactions()
-        }
-        return router
-    }
-
-    private fun findRouter(activity: Activity): PermissionRequestRouter? {
-        return if (activity is FragmentActivity) {
-            activity.supportFragmentManager.findFragmentByTag(ROUTER_TAG) as? PermissionRequestRouter
-        } else {
-            activity.fragmentManager.findFragmentByTag(ROUTER_TAG) as? PermissionRequestRouter
-        }
-    }
-
-    internal class PermissionRouter : BasicRouter(), PermissionRequestRouter {
-        private val permissionCallbackCache = SparseArray<CallbackWrapper>()
-
-        override fun requestPermissions(
-            permissions: Array<out Permission>,
-            onResult: (permissions: Array<out Permission>, grantResults: IntArray) -> Unit
-        ) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val requestCode = makeRequestCode()
-                permissionCallbackCache.put(requestCode, CallbackWrapper(permissions, onResult))
-                requestPermissions(permissions.map { it.permission }.toTypedArray(), requestCode)
-            } else {
-                onResult(emptyArray(), IntArray(0))
-            }
-        }
-
-        override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-            val callback = permissionCallbackCache[requestCode]
-            permissionCallbackCache.remove(requestCode)
-            callback?.onResult(permissions, grantResults)
-        }
-
-        override fun onDestroy() {
-            super.onDestroy()
-            permissionCallbackCache.clear()
-        }
-
-        /**
-         * 生成一个code。
-         */
-        private fun makeRequestCode(): Int {
-            val code = randomGenerator.nextInt(0, 0x0001_0000)
-            return if (permissionCallbackCache.indexOfKey(code) < 0) {
-                code
-            } else {
-                makeRequestCode()
-            }
-        }
-    }
-
-    internal class SupportPermissionRouter : SupportBasicRouter(), PermissionRequestRouter {
-
-        private val permissionCallbackCache = SparseArray<CallbackWrapper>()
-
-        override fun onCreate(savedInstanceState: Bundle?) {
-            super.onCreate(savedInstanceState)
-            retainInstance = true
-        }
-
-        override fun requestPermissions(
-            permissions: Array<out Permission>,
-            onResult: (permissions: Array<out Permission>, grantResults: IntArray) -> Unit
-        ) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val requestCode = makeRequestCode()
-                permissionCallbackCache.put(requestCode, CallbackWrapper(permissions, onResult))
-                requestPermissions(permissions.map { it.permission }.toTypedArray(), requestCode)
-            } else {
-                onResult(emptyArray(), IntArray(0))
-            }
-        }
-
-        override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-            val callback = permissionCallbackCache[requestCode]
-            permissionCallbackCache.remove(requestCode)
-            callback?.onResult(permissions, grantResults)
-        }
-
-        override fun onDestroy() {
-            super.onDestroy()
-            permissionCallbackCache.clear()
-        }
-
-        /**
-         * 生成一个code。
-         */
-        private fun makeRequestCode(): Int {
-            val code = randomGenerator.nextInt(0, 0x0001_0000)
-            return if (permissionCallbackCache.indexOfKey(code) < 0) {
-                code
-            } else {
-                makeRequestCode()
-            }
-        }
-    }
-
-    private class CallbackWrapper(
-        val permissions: Array<out Permission>,
-        val callback: (permissions: Array<out Permission>, grantResults: IntArray) -> Unit
-    ) {
-        fun onResult(permissions: Array<String>, grantResults: IntArray) {
-            grantResults.forEachIndexed { index, i ->
-                if (i == PackageManager.PERMISSION_GRANTED) {
-                    permissions[index] = ""
+                val a = applicants[applicantClass]
+                if (a == null) {
+                    val applicant = applicantClass.getConstructor(Activity::class.java).newInstance(context)
+                    if (applicant is ApkInstallApplicant && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        applicant.apkInstallPermissionIntentGenerator = ApkInstallPermissionIntentGenerator()
+                    }
+                    applicant.intentGenerator =
+                        settingIntentGeneratorInterceptor?.invoke() ?: createSettingIntentGenerator()
+                    applicant.addPermission(it)
+                    applicant.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
+                    applicants[applicantClass] = applicant
+                } else {
+                    a.addPermission(it)
+                    a.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
                 }
             }
-            callback(
-                this.permissions.filter { permissions.contains(it.permission) }.toTypedArray(), grantResults
-            )
+            return ApplicantManager(applicants.values)
+        } else {
+            return null
         }
+    }
+
+    private fun createSettingIntentGenerator(): SettingIntentGenerator {
+        return EMUISettingsIntentGenerator()
+    }
+
+    /**
+     * 创建权限申请器的拦截器。
+     */
+    interface MakeApplicantInterceptor {
+
+        /**
+         * 是否拦截，如果你希望拦截本次创建则返回true，否则应当返回false。只有在返回true的时候 makeApplicant方法才会执行。
+         *
+         * @param permission 你要申请的权限中的其中一个。
+         */
+        fun interceptMake(permission: Permission): Boolean
+
+        /**
+         * 根据一个权限返回其所对应的权限申请器。该方法只有在interceptMake方法返回true的时候再回被执行。
+         *
+         * @param permission 你要申请的权限中的其中一个。
+         */
+        fun makeApplicant(permission: Permission): Class<out PermissionsApplicant>
     }
 }
