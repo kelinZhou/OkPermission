@@ -22,7 +22,7 @@ import java.lang.ref.WeakReference
  */
 class OkPermission private constructor(private val weakActivity: WeakReference<Activity>) {
     companion object {
-
+        private val BRAND = Build.MANUFACTURER.toLowerCase()
         /**
          * 创建OkPermission并依附于Activity。
          *
@@ -47,7 +47,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
     private var checkPermissionTypeInterceptor: MakeApplicantInterceptor? = null
 
     private var missingPermissionDialogInterceptor: ((renewable: Renewable) -> Unit)? = null
-    private var settingIntentGeneratorInterceptor: (() -> SettingIntentGenerator)? = null
+    private var settingIntentGeneratorInterceptor: (() -> SettingIntentGenerator?)? = null
 
     private val activity: Activity?
         get() = weakActivity.get()
@@ -289,7 +289,17 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
     }
 
     private fun createSettingIntentGenerator(): SettingIntentGenerator {
-        return EMUISettingsIntentGenerator()
+        return when {
+            BRAND.contains("huawei") -> EMUISettingsIntentGenerator()
+            BRAND.contains("xiaomi") -> MIUISettingsIntentGenerator()
+            BRAND.contains("oppo") -> OPPOSettingsIntentGenerator()
+            BRAND.contains("vivo") -> VIVOSettingsIntentGenerator()
+            BRAND.contains("meizu") -> MeiZuSettingsIntentGenerator()
+            BRAND.contains("sony") -> SonySettingsIntentGenerator()
+            BRAND.contains("lg") -> LGSettingsIntentGenerator()
+            BRAND.contains("letv") -> LSSettingsIntentGenerator()
+            else -> AppDetailIntentGenerator()
+        }
     }
 
     /**

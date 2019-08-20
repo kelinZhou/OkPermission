@@ -2,6 +2,7 @@ package com.kelin.okpermission.intentgenerator
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 
 /**
  * **描述:** 权限设计页面跳转器。
@@ -14,4 +15,10 @@ import android.content.Intent
  */
 interface SettingIntentGenerator {
     fun generatorIntent(context: Context): Intent
+
+    companion object{
+        fun checkIntentAvailable(context: Context, intent: Intent): Boolean {
+            return context.packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY).isNotEmpty()
+        }
+    }
 }

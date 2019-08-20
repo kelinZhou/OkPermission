@@ -2,6 +2,7 @@ package com.kelin.okpermission.router
 
 import android.app.Activity
 import android.app.Fragment
+import android.content.Intent
 import android.os.Bundle
 import kotlin.random.Random
 
@@ -15,6 +16,8 @@ import kotlin.random.Random
  * **版本:** v 1.0.0
  */
 abstract class BasicRouter : Fragment() {
+
+    protected val emptyIntent :Intent by lazy { Intent() }
 
     protected val randomGenerator = Random(System.currentTimeMillis())
 

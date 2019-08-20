@@ -3,6 +3,7 @@ package com.kelin.okpermission.intentgenerator
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import com.kelin.okpermission.BuildConfig
 
 /**
  * **描述:** 华为&荣耀的Application详情页的意图构建器。
@@ -15,9 +16,24 @@ import android.content.Intent
  */
 class EMUISettingsIntentGenerator : SettingIntentGenerator {
     override fun generatorIntent(context: Context): Intent {
-        return Intent(context.packageName).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            component = ComponentName("com.huawei.systemmanager", "com.huawei.permissionmanager.ui.MainActivity")
+        val intent = Intent()
+
+        intent.setClassName("com.huawei.systemmanager", "com.huawei.permissionmanager.ui.SingleAppActivity")
+        if (SettingIntentGenerator.checkIntentAvailable(context, intent)) {
+            return intent
         }
+
+        intent.component = ComponentName(
+            "com.android.packageinstaller",
+            "com.android.packageinstaller.permission.ui.ManagePermissionsActivity"
+        )
+        if (SettingIntentGenerator.checkIntentAvailable(context, intent)) {
+            return intent
+        }
+
+        intent.component = ComponentName("com.huawei.systemmanager", "com.huawei.permissionmanager.ui.MainActivity")
+        return if (SettingIntentGenerator.checkIntentAvailable(context, intent)) {
+            intent
+        } else intent
     }
 }

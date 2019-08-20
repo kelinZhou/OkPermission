@@ -13,5 +13,5 @@ import android.content.Intent
  */
 interface ActivityResultRouter {
 
-    fun startActivityForResult(intent: Intent, onResult: (resultCode: Int, data: Intent) -> Unit)
+    fun startActivityForResult(intent: Intent, onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit)
 }

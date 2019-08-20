@@ -26,11 +26,19 @@ class OkActivityResult private constructor() {
         val instance: OkActivityResult by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { OkActivityResult() }
     }
 
-    fun startActivityForResult(context: Activity, clazz: Class<out Activity>, onResult: (resultCode: Int, data: Intent) -> Unit) {
+    fun startActivityForResult(
+        context: Activity,
+        clazz: Class<out Activity>,
+        onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit
+    ) {
         startActivityForResult(context, Intent(context, clazz), onResult)
     }
 
-    fun startActivityForResult(context: Activity, intent: Intent, onResult: (resultCode: Int, data: Intent) -> Unit) {
+    fun startActivityForResult(
+        context: Activity,
+        intent: Intent,
+        onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit
+    ) {
         getRouter(context).startActivityForResult(intent, onResult)
     }
 
@@ -68,23 +76,30 @@ class OkActivityResult private constructor() {
 
     internal class ActivityResultRouterImpl : BasicRouter(), ActivityResultRouter {
 
-        private val resultCallbackCache = SparseArray<(resultCode: Int, data: Intent) -> Unit>()
+        private val resultCallbackCache = SparseArray<(resultCode: Int, data: Intent, e: Exception?) -> Unit>()
 
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             retainInstance = true
         }
 
-        override fun startActivityForResult(intent: Intent, onResult: (resultCode: Int, data: Intent) -> Unit) {
-            val requestCode = makeRequestCode()
-            resultCallbackCache.put(requestCode, onResult)
-            startActivityForResult(intent, requestCode)
+        override fun startActivityForResult(
+            intent: Intent,
+            onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit
+        ) {
+            try {
+                val requestCode = makeRequestCode()
+                startActivityForResult(intent, requestCode)
+                resultCallbackCache.put(requestCode, onResult)
+            } catch (e: Exception) {
+                onResult(Activity.RESULT_CANCELED, emptyIntent, e)
+            }
         }
 
         override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
             val callback = resultCallbackCache[requestCode]
             resultCallbackCache.remove(requestCode)
-            callback?.invoke(resultCode, data ?: Intent())
+            callback?.invoke(resultCode, data ?: emptyIntent, null)
         }
 
         override fun onDestroy() {
@@ -107,23 +122,30 @@ class OkActivityResult private constructor() {
 
     internal class SupportActivityResultRouterImpl : SupportBasicRouter(), ActivityResultRouter {
 
-        private val resultCallbackCache = SparseArray<(resultCode: Int, data: Intent) -> Unit>()
+        private val resultCallbackCache = SparseArray<(resultCode: Int, data: Intent, e: Exception?) -> Unit>()
 
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             retainInstance = true
         }
 
-        override fun startActivityForResult(intent: Intent, onResult: (resultCode: Int, data: Intent) -> Unit) {
-            val requestCode = makeRequestCode()
-            resultCallbackCache.put(requestCode, onResult)
-            startActivityForResult(intent, requestCode)
+        override fun startActivityForResult(
+            intent: Intent,
+            onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit
+        ) {
+            try {
+                val requestCode = makeRequestCode()
+                startActivityForResult(intent, requestCode)
+                resultCallbackCache.put(requestCode, onResult)
+            } catch (e: Exception) {
+                onResult(Activity.RESULT_CANCELED, emptyIntent, e)
+            }
         }
 
         override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
             val callback = resultCallbackCache[requestCode]
             resultCallbackCache.remove(requestCode)
-            callback?.invoke(resultCode, data ?: Intent())
+            callback?.invoke(resultCode, data ?: emptyIntent, null)
         }
 
         override fun onDestroy() {

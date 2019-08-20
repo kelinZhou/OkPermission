@@ -14,9 +14,23 @@ import android.content.Intent
  */
 class MIUISettingsIntentGenerator : SettingIntentGenerator {
     override fun generatorIntent(context: Context): Intent {
-        return Intent("miui.intent.action.APP_PERM_EDITOR").apply {
-            setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity")
-            putExtra("extra_pkgname", context.packageName)
+        val intent = Intent("miui.intent.action.APP_PERM_EDITOR")
+        intent.putExtra("extra_pkgname", context.packageName)
+        if (SettingIntentGenerator.checkIntentAvailable(context, intent)) {
+            return intent
         }
+
+        intent.setPackage("com.miui.securitycenter")
+        if (SettingIntentGenerator.checkIntentAvailable(context, intent)) {
+            return intent
+        }
+
+        intent.setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.AppPermissionsEditorActivity")
+        if (SettingIntentGenerator.checkIntentAvailable(context, intent)) {
+            return intent
+        }
+
+        intent.setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity")
+        return intent
     }
 }

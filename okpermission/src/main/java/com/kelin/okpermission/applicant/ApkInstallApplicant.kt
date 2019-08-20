@@ -43,8 +43,8 @@ class ApkInstallApplicant(context: Activity) : PermissionsApplicant(context) {
             OkActivityResult.instance.startActivityForResult(
                 context,
                 (apkInstallPermissionIntentGenerator ?: ApkInstallPermissionIntentGenerator()).generatorIntent(context)
-            ) { _, _ ->
-                if (context.packageManager.canRequestPackageInstalls()) {
+            ) { _, _ , e->
+                if (e == null && context.packageManager.canRequestPackageInstalls()) {
                     onResult(emptyArray())
                 } else {
                     onResult(permissions)

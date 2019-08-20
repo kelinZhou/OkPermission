@@ -2,6 +2,9 @@ package com.kelin.okpermission.intentgenerator
 
 import android.content.Context
 import android.content.Intent
+import android.content.ComponentName
+
+
 
 /**
  * **描述:** 魅族的Application详情页的意图构建器。
@@ -14,9 +17,9 @@ import android.content.Intent
  */
 class MeiZuSettingsIntentGenerator : SettingIntentGenerator {
     override fun generatorIntent(context: Context): Intent {
-        return Intent("com.meizu.safe.security.SHOW_APPSEC").apply {
-            addCategory(Intent.CATEGORY_DEFAULT)
-            putExtra("packageName", context.packageName)
-        }
+        val intent = Intent("com.meizu.safe.security.SHOW_APPSEC")
+        intent.putExtra("packageName", context.packageName)
+        intent.component = ComponentName("com.meizu.safe", "com.meizu.safe.security.AppSecActivity")
+        return intent
     }
 }

@@ -12,6 +12,7 @@ import android.support.v7.app.AlertDialog
 import android.util.SparseArray
 import com.kelin.okpermission.OkActivityResult
 import com.kelin.okpermission.Renewable
+import com.kelin.okpermission.intentgenerator.AppDetailIntentGenerator
 import com.kelin.okpermission.intentgenerator.SettingIntentGenerator
 import com.kelin.okpermission.permission.Permission
 import com.kelin.okpermission.router.BasicRouter
@@ -161,11 +162,29 @@ abstract class PermissionsApplicant(protected val context: Activity) {
             OkActivityResult.instance.startActivityForResult(
                 context,
                 intentGenerator.generatorIntent(context)
-            ) { _, _ ->
-                applyPermission(
-                    filterWeak(deniedPermissions),
-                    finished
-                )
+            ) { _, _, e ->
+                if (e == null) {
+                    applyPermission(
+                        filterWeak(deniedPermissions),
+                        finished
+                    )
+                } else {
+                    OkActivityResult.instance.startActivityForResult(
+                        context,
+                        AppDetailIntentGenerator().generatorIntent(context)
+                    ){ _, _, exception ->
+                        if (exception == null) {
+                            applyPermission(
+                                filterWeak(deniedPermissions),
+                                finished
+                            )
+                        } else {
+                            isGranted = false
+                            this.deniedPermissions.clear()
+                            this.deniedPermissions.addAll(deniedPermissions)
+                        }
+                    }
+                }
             }
         } else {
             isGranted = false
