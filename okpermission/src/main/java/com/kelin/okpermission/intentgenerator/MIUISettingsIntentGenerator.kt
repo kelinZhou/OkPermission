@@ -2,6 +2,7 @@ package com.kelin.okpermission.intentgenerator
 
 import android.content.Context
 import android.content.Intent
+import com.kelin.okpermission.permission.Permission
 
 /**
  * **描述:** 小米的Application详情页的意图构建器。
@@ -12,8 +13,8 @@ import android.content.Intent
  *
  * **版本:** v 1.0.0
  */
-class MIUISettingsIntentGenerator : SettingIntentGenerator {
-    override fun generatorIntent(context: Context): Intent {
+class MIUISettingsIntentGenerator(override val permission: Permission?) : SettingIntentGenerator() {
+    override fun onGeneratorDangerousIntent(context: Context): Intent {
         val intent = Intent("miui.intent.action.APP_PERM_EDITOR")
         intent.putExtra("extra_pkgname", context.packageName)
         if (SettingIntentGenerator.checkIntentAvailable(context, intent)) {

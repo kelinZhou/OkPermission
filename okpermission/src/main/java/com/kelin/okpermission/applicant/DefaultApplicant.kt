@@ -19,7 +19,7 @@ class DefaultApplicant(context: Activity) : PermissionsApplicant(context) {
 
     override fun checkSelfPermissions(permission: Permission): Boolean {
         return ContextCompat.checkSelfPermission(
-            context,
+            activity,
             permission.permission
         ) == PackageManager.PERMISSION_GRANTED
     }

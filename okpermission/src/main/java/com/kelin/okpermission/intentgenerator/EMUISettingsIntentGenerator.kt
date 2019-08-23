@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import com.kelin.okpermission.BuildConfig
+import com.kelin.okpermission.permission.Permission
 
 /**
  * **描述:** 华为&荣耀的Application详情页的意图构建器。
@@ -14,12 +15,12 @@ import com.kelin.okpermission.BuildConfig
  *
  * **版本:** v 1.0.0
  */
-class EMUISettingsIntentGenerator : SettingIntentGenerator {
-    override fun generatorIntent(context: Context): Intent {
+class EMUISettingsIntentGenerator(override val permission: Permission?) : SettingIntentGenerator() {
+    override fun onGeneratorDangerousIntent(context: Context): Intent {
         val intent = Intent()
 
         intent.setClassName("com.huawei.systemmanager", "com.huawei.permissionmanager.ui.SingleAppActivity")
-        if (SettingIntentGenerator.checkIntentAvailable(context, intent)) {
+        if (checkIntentAvailable(context, intent)) {
             return intent
         }
 
@@ -27,13 +28,17 @@ class EMUISettingsIntentGenerator : SettingIntentGenerator {
             "com.android.packageinstaller",
             "com.android.packageinstaller.permission.ui.ManagePermissionsActivity"
         )
-        if (SettingIntentGenerator.checkIntentAvailable(context, intent)) {
+        if (checkIntentAvailable(context, intent)) {
             return intent
         }
 
         intent.component = ComponentName("com.huawei.systemmanager", "com.huawei.permissionmanager.ui.MainActivity")
-        return if (SettingIntentGenerator.checkIntentAvailable(context, intent)) {
+        return if (checkIntentAvailable(context, intent)) {
             intent
         } else intent
+    }
+
+    override fun onGeneratorNotificationIntent(context: Context, permission: Permission?): Intent {
+        return super.onGeneratorNotificationIntent(context, permission)
     }
 }

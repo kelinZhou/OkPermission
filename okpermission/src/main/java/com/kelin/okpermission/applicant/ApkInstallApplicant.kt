@@ -1,12 +1,8 @@
 package com.kelin.okpermission.applicant
 
 import android.app.Activity
-import android.content.Intent
-import android.net.Uri
 import android.os.Build
-import android.provider.Settings
 import com.kelin.okpermission.OkActivityResult
-import com.kelin.okpermission.intentgenerator.ApkInstallPermissionIntentGenerator
 import com.kelin.okpermission.permission.Permission
 import com.kelin.okpermission.router.PermissionRequestRouter
 
@@ -21,10 +17,8 @@ import com.kelin.okpermission.router.PermissionRequestRouter
  */
 class ApkInstallApplicant(context: Activity) : PermissionsApplicant(context) {
 
-    internal var apkInstallPermissionIntentGenerator: ApkInstallPermissionIntentGenerator? = null
-
     override fun checkSelfPermissions(permission: Permission): Boolean {
-        return Build.VERSION.SDK_INT < Build.VERSION_CODES.O || context.packageManager.canRequestPackageInstalls()
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.O || activity.packageManager.canRequestPackageInstalls()
     }
 
     override fun shouldShowRequestPermissionRationale(
@@ -41,10 +35,10 @@ class ApkInstallApplicant(context: Activity) : PermissionsApplicant(context) {
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             OkActivityResult.instance.startActivityForResult(
-                context,
-                (apkInstallPermissionIntentGenerator ?: ApkInstallPermissionIntentGenerator()).generatorIntent(context)
+                activity,
+                intentGenerator.onGeneratorDangerousIntent(activity)
             ) { _, _ , e->
-                if (e == null && context.packageManager.canRequestPackageInstalls()) {
+                if (e == null && activity.packageManager.canRequestPackageInstalls()) {
                     onResult(emptyArray())
                 } else {
                     onResult(permissions)

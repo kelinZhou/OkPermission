@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">OkPermission</string>
     <string name="request_permission_explain">为了更好的服务于您，请允许我们需要的权限。</string>
+    <string name="system_message">系统消息</string>
 </resources>

@@ -1,26 +1,55 @@
 package com.kelin.okpermissiondemo
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.os.Build
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
 import com.kelin.okpermission.OkPermission
-import com.kelin.okpermission.permission.Permission
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_more_opration, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when (item?.itemId) {
+            R.id.menuGoToAppDetail -> {
+                OkPermission.gotoPermissionSettingPage(this)
+                true
+            }
+            R.id.menuGoToApkInstall -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    OkPermission.gotoInstallPermissionPage(this)
+                } else {
+                    Toast.makeText(this, "当前系统版本过低", Toast.LENGTH_SHORT).show()
+                }
+                true
+            }
+            R.id.menuGoToNotification -> {
+                OkPermission.gotoNotificationPermissionPage(this)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    @SuppressLint("InlinedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         tv0.setOnClickListener {
             OkPermission.with(this)
-                .weakApplyPermissions(
-                    Manifest.permission.CALL_PHONE,
-                    Manifest.permission.CAMERA
-                ) { permissions ->
-                    if (permissions.isEmpty()) {
+                .addWeakPermissions(Manifest.permission.CALL_PHONE, Manifest.permission.CAMERA)
+                .checkAndApply { granted, permissions ->
+                    if (granted) {
                         Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(this, "未获取全部权限", Toast.LENGTH_SHORT).show()
@@ -29,11 +58,11 @@ class MainActivity : AppCompatActivity() {
         }
         tv1.setOnClickListener {
             OkPermission.with(this)
-                .applyPermissions(
+                .addDefaultPermissions(
                     Manifest.permission.CALL_PHONE,
                     Manifest.permission.CAMERA
-                ) { permissions ->
-                    if (permissions.isEmpty()) {
+                ).checkAndApply { granted, permissions ->
+                    if (granted) {
                         Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(this, "未获取全部权限", Toast.LENGTH_SHORT).show()
@@ -55,51 +84,59 @@ class MainActivity : AppCompatActivity() {
 //        }
 
         tv3.setOnClickListener {
-            OkPermission.with(this).forceApplyPermissions(
-                Manifest.permission.CALL_PHONE,
-                Manifest.permission.CAMERA
-            ) { permissions ->
-                if (permissions.isEmpty()) {
-                    Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "未获取全部权限", Toast.LENGTH_SHORT).show()
+            OkPermission.with(this)
+                .addForcePermissions(
+                    Manifest.permission.CALL_PHONE,
+                    Manifest.permission.CAMERA
+                ).checkAndApply { granted, permissions ->
+                    if (granted) {
+                        Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "未获取全部权限", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            }
         }
 
         tv4.setOnClickListener {
-            OkPermission.with(this).mixApplyPermissions(
-                Permission.createDefault(Manifest.permission.CALL_PHONE, true),
-                Permission.createWeak(Manifest.permission.CAMERA, true)
-            ) { granted, permissions ->
-                when {
-                    permissions.isEmpty() -> Toast.makeText(this, "所有权限已获取", Toast.LENGTH_SHORT).show()
-                    granted -> Toast.makeText(this, "所有必须的权限已获取", Toast.LENGTH_SHORT).show()
-                    else -> Toast.makeText(this, "未获取全部权限", Toast.LENGTH_SHORT).show()
+            OkPermission.with(this)
+                .addWeakPermissions(Manifest.permission.CAMERA)
+                .addDefaultPermissions(Manifest.permission.CALL_PHONE)
+                .addForcePermissions(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                .checkAndApply { granted, permissions ->
+                    when {
+                        permissions.isEmpty() -> Toast.makeText(this, "所有权限已获取", Toast.LENGTH_SHORT).show()
+                        granted -> Toast.makeText(this, "所有必须的权限已获取", Toast.LENGTH_SHORT).show()
+                        else -> Toast.makeText(this, "未获取全部权限", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            }
         }
 
         tv5.setOnClickListener {
-            OkPermission.with(this).applyPermissions(
-                Manifest.permission.CALL_PHONE,
-                Manifest.permission.CAMERA,
-                "android.permission.REQUEST_INSTALL_PACKAGES"
-            ) { permissions ->
-                when {
-                    permissions.isEmpty() -> Toast.makeText(this, "所有权限已获取", Toast.LENGTH_SHORT).show()
-                    !permissions.contains(Manifest.permission.REQUEST_INSTALL_PACKAGES) -> Toast.makeText(
-                        this,
-                        "安装权限已获取",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    else -> Toast.makeText(this, "未获取全部权限", Toast.LENGTH_SHORT).show()
+            OkPermission.with(this)
+                .addDefaultPermissions(
+                    Manifest.permission.CALL_PHONE,
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.REQUEST_INSTALL_PACKAGES,
+                    OkPermission.permission.NOTIFICATION
+                ).checkAndApply { granted, permissions ->
+                    if (granted) {
+                        Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
+                    } else if (!permissions.contains(Manifest.permission.REQUEST_INSTALL_PACKAGES)) {
+                        Toast.makeText(this, "安装权限已获取", Toast.LENGTH_SHORT).show()
+                    } else if (!permissions.contains(OkPermission.permission.NOTIFICATION)) {
+                        Toast.makeText(this, "通知权限已获取", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "未获取全部权限", Toast.LENGTH_SHORT).show()
+                    }
                 }
-            }
         }
 
         tv6.setOnClickListener {
             OkPermission.with(this)
+                .addDefaultPermissions(
+                    Manifest.permission.CALL_PHONE,
+                    Manifest.permission.CAMERA
+                )
                 .interceptMissingPermissionDialog {
                     AlertDialog.Builder(this)
                         .setCancelable(false)
@@ -111,11 +148,7 @@ class MainActivity : AppCompatActivity() {
                         .setPositiveButton("设置") { _, _ ->
                             it.continueWorking(true)
                         }.show()
-                }
-                .applyPermissions(
-                    Manifest.permission.CALL_PHONE,
-                    Manifest.permission.CAMERA
-                ) { permissions ->
+                }.checkAndApply { granted, permissions ->
                     if (permissions.isEmpty()) {
                         Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
                     } else {
@@ -125,14 +158,27 @@ class MainActivity : AppCompatActivity() {
         }
 
         tv7.setOnClickListener {
-            OkPermission.with(this).applyApkInstallPermission { canInstall ->
-                if (canInstall) {
-                    Toast.makeText(this, "可以安装APK了", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "没有安装APK权限", Toast.LENGTH_SHORT).show()
+            OkPermission.with(this)
+                .addDefaultPermissions(Manifest.permission.REQUEST_INSTALL_PACKAGES)
+                .checkAndApply { granted, permissions ->
+                    if (granted) {
+                        Toast.makeText(this, "可以安装APK了", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "没有安装APK权限", Toast.LENGTH_SHORT).show()
+                    }
                 }
+        }
 
-            }
+        tv8.setOnClickListener {
+            OkPermission.with(this)
+                .addNotificationPermission(false, "system")
+                .checkAndApply { granted, permissions ->
+                    if (granted) {
+                        NotificationHelper.instance.sendNotification(2, "权限变更", "用户已授权通知权限")
+                    } else {
+                        Toast.makeText(this, "用户拒绝了通知权限", Toast.LENGTH_SHORT).show()
+                    }
+                }
         }
     }
 }

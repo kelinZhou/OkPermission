@@ -1,5 +1,7 @@
 package com.kelin.okpermission.permission
 
+import com.kelin.okpermission.OkPermission
+
 /**
  * **描述:** 定义权限接口。
  *
@@ -20,10 +22,9 @@ abstract class Permission {
          * 创建一个Permission对象。
          *
          * @param permission 要申请的权限。
-         * @param necessary 是否是必要的权限。如果你申请的所有的权限都是必要的权限建议使用 forceApplyPermissions 方法，
-         * 如果你要申请的权限全部都是非必要的权限则建议使用 applyPermissions 方法。
+         * @param necessary 是否是必要的权限。
          */
-        fun createDefault(permission: String, necessary: Boolean): Permission {
+        internal fun createDefault(permission: String, necessary: Boolean = false): Permission {
             return DefaultPermission(permission, necessary, false)
         }
 
@@ -33,8 +34,17 @@ abstract class Permission {
          * @param permission 要申请的权限。
          * @param weak 是否是弱申请权限，弱申请的权限是优先级最弱的，当用户决绝该权限后就不会有任何提示去引导用户授予。
          */
-        fun createWeak(permission: String, weak: Boolean): Permission {
+        internal fun createWeak(permission: String, weak: Boolean): Permission {
             return DefaultPermission(permission, false, weak)
+        }
+
+        /**
+         * 创建一个Permission对象。
+         *
+         * @param necessary 是否是必要的权限。
+         */
+        internal fun createNotification(channel: String, necessary: Boolean = false): Permission {
+            return NotificationPermission(necessary, false, channel)
         }
     }
 
@@ -43,4 +53,12 @@ abstract class Permission {
         override val necessary: Boolean,
         override val isWeak: Boolean
     ) : Permission()
+
+    internal data class NotificationPermission(
+        override val necessary: Boolean,
+        override val isWeak: Boolean,
+        val channel: String
+    ) : Permission() {
+        override val permission: String = OkPermission.permission.NOTIFICATION
+    }
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ComponentName
 import com.kelin.okpermission.BuildConfig
+import com.kelin.okpermission.permission.Permission
 
 
 /**
@@ -15,12 +16,12 @@ import com.kelin.okpermission.BuildConfig
  *
  * **版本:** v 1.0.0
  */
-class LSSettingsIntentGenerator : SettingIntentGenerator {
-    override fun generatorIntent(context: Context): Intent {
+class LSSettingsIntentGenerator(override val permission: Permission?) : SettingIntentGenerator() {
+    override fun onGeneratorDangerousIntent(context: Context): Intent {
         val intent = Intent()
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         intent.putExtra("packageName", BuildConfig.APPLICATION_ID)
-        intent.component = ComponentName("com.letv.android.letvsafe", "com.letv.android.letvsafe.PermissionAndApps")
+        intent.component = ComponentName("com.android.packageinstaller", "com.android.packageinstaller.permission.ui.ManagePermissionsActivity")
         return intent
     }
 }

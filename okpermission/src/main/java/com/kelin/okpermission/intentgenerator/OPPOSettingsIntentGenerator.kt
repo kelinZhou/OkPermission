@@ -3,7 +3,7 @@ package com.kelin.okpermission.intentgenerator
 import android.content.Context
 import android.content.Intent
 import android.content.ComponentName
-
+import com.kelin.okpermission.permission.Permission
 
 
 /**
@@ -15,8 +15,8 @@ import android.content.ComponentName
  *
  * **版本:** v 1.0.0
  */
-class OPPOSettingsIntentGenerator : SettingIntentGenerator {
-    override fun generatorIntent(context: Context): Intent {
+class OPPOSettingsIntentGenerator(override val permission: Permission?) : SettingIntentGenerator() {
+    override fun onGeneratorDangerousIntent(context: Context): Intent {
         val intent = Intent()
         intent.putExtra("packagename", context.packageName)
 

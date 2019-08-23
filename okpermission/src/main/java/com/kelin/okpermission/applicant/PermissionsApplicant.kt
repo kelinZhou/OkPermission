@@ -1,12 +1,10 @@
 package com.kelin.okpermission.applicant
 
 import android.app.Activity
-import android.content.Intent
+import android.content.Context
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.support.v4.app.FragmentActivity
 import android.support.v7.app.AlertDialog
 import android.util.SparseArray
@@ -28,9 +26,11 @@ import com.kelin.okpermission.router.SupportBasicRouter
  *
  * **版本:** v 1.0.0
  */
-abstract class PermissionsApplicant(protected val context: Activity) {
+abstract class PermissionsApplicant(protected val activity: Activity) {
     private val permissionList: MutableList<Permission> = ArrayList()
-    internal lateinit var intentGenerator : SettingIntentGenerator
+    protected val applicationContext: Context
+        get() = activity.applicationContext
+    internal lateinit var intentGenerator: SettingIntentGenerator
     internal var isGranted: Boolean = true
     internal val deniedPermissions = ArrayList<Permission>()
     internal var missingPermissionDialogInterceptor: ((renewable: Renewable) -> Unit)? = null
@@ -60,13 +60,13 @@ abstract class PermissionsApplicant(protected val context: Activity) {
         finished: () -> Unit
     ) {
         var needCheck = true
-        val router = getRouter(context)
+        val router = getRouter(activity)
         applyPermissions.forEach {
             val granted = checkSelfPermissions(it)
             if (!granted) {
                 isGranted = false
             }
-            if (it.necessary && !granted && !shouldShowRequestPermissionRationale(router, it)){
+            if (it.necessary && !granted && !shouldShowRequestPermissionRationale(router, it)) {
                 needCheck = false
                 showMissingPermissionDialog(applyPermissions, finished)
             }
@@ -85,10 +85,10 @@ abstract class PermissionsApplicant(protected val context: Activity) {
         applyPermissions: Array<out Permission>,
         finished: () -> Unit
     ) {
-        val router = getRouter(context)
+        val router = getRouter(activity)
         requestPermissions(router, applyPermissions) { deniedPermissions ->
             when {
-                //如果用户已经统一了全部权限
+                //如果用户已经同意了全部权限
                 deniedPermissions.isEmpty() -> {
                     isGranted = true
                     finished()
@@ -122,7 +122,8 @@ abstract class PermissionsApplicant(protected val context: Activity) {
         if (isContinue) {
             applyPermission(deniedPermissions, finished)
         } else {
-            isGranted = !deniedPermissions.any { it.necessary }
+            isGranted =
+                if (permissionList.any { it.necessary }) !deniedPermissions.any { it.necessary } else deniedPermissions.isEmpty()
             this.deniedPermissions.addAll(deniedPermissions)
             finished()
         }
@@ -140,7 +141,7 @@ abstract class PermissionsApplicant(protected val context: Activity) {
                 }
             })
         } else {
-            AlertDialog.Builder(context)
+            AlertDialog.Builder(activity)
                 .setCancelable(false)
                 .setTitle("帮助")
                 .setMessage("当前操作缺少必要权限。\n请点击\"设置\"-\"权限\"-打开所需权限。\n最后点击两次后退按钮，即可返回。")
@@ -160,8 +161,8 @@ abstract class PermissionsApplicant(protected val context: Activity) {
     ) {
         if (isContinue) {
             OkActivityResult.instance.startActivityForResult(
-                context,
-                intentGenerator.generatorIntent(context)
+                activity,
+                intentGenerator.onGeneratorDangerousIntent(activity)
             ) { _, _, e ->
                 if (e == null) {
                     applyPermission(
@@ -170,9 +171,9 @@ abstract class PermissionsApplicant(protected val context: Activity) {
                     )
                 } else {
                     OkActivityResult.instance.startActivityForResult(
-                        context,
-                        AppDetailIntentGenerator().generatorIntent(context)
-                    ){ _, _, exception ->
+                        activity,
+                        AppDetailIntentGenerator(null).onGeneratorDangerousIntent(activity)
+                    ) { _, _, exception ->
                         if (exception == null) {
                             applyPermission(
                                 filterWeak(deniedPermissions),

@@ -12,4 +12,9 @@ import com.kelin.okpermission.OkPermission
  *
  * **版本:** v 1.0.0
  */
-class App : Application()
+class App : Application(){
+    override fun onCreate() {
+        super.onCreate()
+        NotificationHelper.init(this)
+    }
+}

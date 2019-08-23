@@ -2,8 +2,7 @@ package com.kelin.okpermission.intentgenerator
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
+import com.kelin.okpermission.permission.Permission
 
 /**
  * **描述:** 默认的Application详情页的意图构建器。
@@ -14,11 +13,8 @@ import android.provider.Settings
  *
  * **版本:** v 1.0.0
  */
-class AppDetailIntentGenerator : SettingIntentGenerator {
-    override fun generatorIntent(context: Context): Intent {
-        return Intent(
-            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-            Uri.parse("package:" + context.packageName)
-        )
+class AppDetailIntentGenerator(override val permission: Permission?) : SettingIntentGenerator() {
+    override fun onGeneratorDangerousIntent(context: Context): Intent {
+        return generatorAppDetailIntent(context)
     }
 }

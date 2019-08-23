@@ -2,10 +2,13 @@ package com.kelin.okpermission
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.support.annotation.RequiresApi
 import com.kelin.okpermission.applicant.ApkInstallApplicant
 import com.kelin.okpermission.applicant.DefaultApplicant
+import com.kelin.okpermission.applicant.NotificationApplicant
 import com.kelin.okpermission.applicant.PermissionsApplicant
 import com.kelin.okpermission.intentgenerator.*
 import com.kelin.okpermission.permission.Permission
@@ -21,7 +24,14 @@ import java.lang.ref.WeakReference
  * **版本:** v 1.0.0
  */
 class OkPermission private constructor(private val weakActivity: WeakReference<Activity>) {
+    class permission {
+        companion object {
+            const val NOTIFICATION = "kelin.permission.NOTIFICATION"
+        }
+    }
+
     companion object {
+
         private val BRAND = Build.MANUFACTURER.toLowerCase()
         /**
          * 创建OkPermission并依附于Activity。
@@ -31,186 +41,202 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
         fun with(activity: Activity): OkPermission {
             return OkPermission(WeakReference(activity))
         }
+
+        /**
+         * 打开应用权限设置页面。由于这需要对各个品牌的手机进行适配，所以并不能保证一定能打开权限设置页面。
+         * 如果无法打开应用权限设置页面，将会打开应用详情页面。
+         *
+         * @param context 需要上下文。
+         */
+        fun gotoPermissionSettingPage(context: Context) {
+            val intentGenerator = createSettingIntentGenerator()
+            try {
+                context.startActivity(intentGenerator.generatorIntent(context))
+            } catch (e: Exception) {
+                context.startActivity(intentGenerator.generatorAppDetailIntent(context))
+            }
+        }
+
+        @RequiresApi(Build.VERSION_CODES.O)
+        fun gotoInstallPermissionPage(context: Context) {
+            context.startActivity(createSettingIntentGenerator(Permission.createDefault(Manifest.permission.REQUEST_INSTALL_PACKAGES)).generatorIntent(context))
+        }
+
+        fun gotoNotificationPermissionPage(context: Context, channel: String = "") {
+            val permission =  Permission.createNotification(channel)
+            context.startActivity(createSettingIntentGenerator(permission).generatorIntent(context))
+        }
+
+        /**
+         * Check that certain permissions are registered in the manifest file.
+         */
+        private fun checkPermissionsRegistered(context: Context, vararg permissions: String) {
+            val registeredPermissions = getManifestPermissions(context)
+            val unregisteredPermissions = permissions.filter { !registeredPermissions.contains(it) }.toMutableList()
+            if (unregisteredPermissions.isNotEmpty()) {
+                val hasNotificationPermission = if (unregisteredPermissions.contains(permission.NOTIFICATION)) {
+                    unregisteredPermissions.remove(permission.NOTIFICATION)
+                    true
+                } else {
+                    false
+                }
+                throw IllegalStateException(
+                    "${if (hasNotificationPermission) {
+                        "OkPermission.Permission.NOTIFICATION must be used addNotificationPermission method to add. \n"
+                    } else {
+                        ""
+                    }}${
+                    if (unregisteredPermissions.isNotEmpty()) {
+                        "And\nThere are some permissions aren't registered in the manifest file! The following:\n${
+                        unregisteredPermissions.joinToString("\n")
+                        }"
+                    } else {
+                        ""
+                    }}\n"
+                )
+            }
+        }
+
+        private fun getManifestPermissions(context: Context): Array<out String> {
+            return context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS)
+                .requestedPermissions
+        }
+
+        private fun createSettingIntentGenerator(permission: Permission? = null): SettingIntentGenerator {
+            return when {
+                BRAND.contains("huawei") -> EMUISettingsIntentGenerator(permission)
+                BRAND.contains("xiaomi") -> MIUISettingsIntentGenerator(permission)
+                BRAND.contains("oppo") -> OPPOSettingsIntentGenerator(permission)
+                BRAND.contains("vivo") -> VIVOSettingsIntentGenerator(permission)
+                BRAND.contains("meizu") -> MeiZuSettingsIntentGenerator(permission)
+                BRAND.contains("sony") -> SonySettingsIntentGenerator(permission)
+                BRAND.contains("lg") -> LGSettingsIntentGenerator(permission)
+                BRAND.contains("lemobile") -> LSSettingsIntentGenerator(permission)
+                BRAND.contains("360") -> Safe360SettingsIntentGenerator(permission)
+                else -> AppDetailIntentGenerator(permission)
+            }
+        }
     }
 
-    /**
-     * 权限被授予。
-     */
-    private var permissionGranted: (() -> Unit)? = null
-    /**
-     * 权限被拒绝。
-     */
-    private var permissionDenied: (() -> Unit)? = null
+    private val needPermissions = ArrayList<Permission>()
     /**
      * 检测权限类型的拦截器。
      */
     private var checkPermissionTypeInterceptor: MakeApplicantInterceptor? = null
 
     private var missingPermissionDialogInterceptor: ((renewable: Renewable) -> Unit)? = null
-    private var settingIntentGeneratorInterceptor: (() -> SettingIntentGenerator?)? = null
+    private var settingIntentGeneratorInterceptor: ((permission: Permission) -> SettingIntentGenerator?)? = null
 
     private val activity: Activity?
         get() = weakActivity.get()
 
 
-    fun applyApkInstallPermission(canInstall: (canInstall: Boolean) -> Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            applyPermissions(Manifest.permission.REQUEST_INSTALL_PACKAGES) {
-                canInstall(it.isEmpty())
-            }
-        } else {
-            canInstall(true)
-        }
-    }
-
     /**
-     * **申请权限。**
+     * **添加弱申请权限。**
      *
-     * 当需要申请系统权限的时候调用，调用者无需关心要申请的权限是否已经被用户授予。只需无脑调用该方法即可。
-     * 该方法会自动检测权限是否已经被授予，如果没有被授予则会去申请权限，如果已经被授予则会直接执行回调。
+     * 所谓弱申请就是指只尝试申请一次如果用户拒绝了就不会在本次就不会在提示用户进行授权。
+     * 如果你的权限是必须的你可以调用```addForcePermissions```，如你希望尽可能的初始用户同意你的权限但有不希望有不好的体验
+     * 你可以调用```addDefaultPermissions```。
      *
-     * @param permissions 要申请的权限。
-     * @param listener 申请结果的监听。如果回调中的permissions为空则表示所有权限已经被获取，
-     * 否则就表示用户拒绝了某个或某些权限，而被拒绝的权限就是permissions集合中的权限。
+     * @param permissions 要进行弱申请的权限。
      *
+     * @see addDefaultPermissions
      *
-     * **注意：**
-     * 该方法与 ```forceApplyPermissions``` 方法有以下两点不同：
-     *
-     * 1.调用该方法申请权限都是非必须的，也就是说无论用户是否授予或拒绝了所申请的权限都不应该影响流程。
-     *
-     * 2.该方法中所申请的权限默认只会提示用户一次，如果你设置了解释内容也顶多会在用户点击继续后再提示一次，如果用户已经勾选了
-     * 不再询问的话则不会有任何提示展示给用户。
-     *
-     * **如果你想强制申请权限，请使用 ```forceApplyPermissions``` 方法。如果你一次申请了N个权限，而希望有些权限是强制的有些权限是为强制的
-     * 的话可以使用 ```fun applyPermissions(Permission)``` 方法。**
-     *
-     * @see forceApplyPermissions
-     *
-     * @see mixApplyPermissions
+     * @see addForcePermissions
      */
-    fun weakApplyPermissions(
-        vararg permissions: String,
-        listener: (permissions: Array<out String>) -> Unit
-    ) {
-        val function: (Boolean, Array<out String>) -> Unit = { _, ps ->
-            listener(ps)
-        }
-        val targetPermissions = permissions.map { Permission.createWeak(it, true) }.toTypedArray()
-        checkPermissionsRegistered(targetPermissions)
-        doOnApplyPermission(targetPermissions, function)
-    }
-
-    /**
-     * **申请权限。**
-     *
-     * 当需要申请系统权限的时候调用，调用者无需关心要申请的权限是否已经被用户授予。只需无脑调用该方法即可。
-     * 该方法会自动检测权限是否已经被授予，如果没有被授予则会去申请权限，如果已经被授予则会直接执行回调。
-     *
-     * @param permissions 要申请的权限。
-     * @param listener 申请结果的监听。如果回调中的permissions为空则表示所有权限已经被获取，
-     * 否则就表示用户拒绝了某个或某些权限，而被拒绝的权限就是permissions集合中的权限。
-     *
-     *
-     * **注意：**
-     * 该方法与 ```forceApplyPermissions``` 方法有以下两点不同：
-     *
-     * 1.调用该方法申请权限都是非必须的，也就是说无论用户是否授予或拒绝了所申请的权限都不应该影响流程。
-     *
-     * 2.该方法中所申请的权限默认只会提示用户一次，如果你设置了解释内容也顶多会在用户点击继续后再提示一次，如果用户已经勾选了
-     * 不再询问的话则不会有任何提示展示给用户。
-     *
-     * **如果你想强制申请权限，请使用 ```forceApplyPermissions``` 方法。如果你一次申请了N个权限，而希望有些权限是强制的有些权限是为强制的
-     * 的话可以使用 ```fun applyPermissions(Permission)``` 方法。**
-     *
-     * @see forceApplyPermissions
-     *
-     * @see mixApplyPermissions
-     */
-    fun applyPermissions(
-        vararg permissions: String,
-        listener: (permissions: Array<out String>) -> Unit
-    ) {
-        val function: (Boolean, Array<out String>) -> Unit = { _, ps ->
-            listener(ps)
-        }
-        val targetPermissions = permissions.map { Permission.createDefault(it, false) }.toTypedArray()
-        checkPermissionsRegistered(targetPermissions)
-        doOnApplyPermission(targetPermissions, function)
-    }
-
-    /**
-     * **申请权限。**
-     *
-     * 当需要申请系统权限的时候调用，调用者无需关心要申请的权限是否已经被用户授予。只需无脑调用该方法即可。
-     * 该方法会自动检测权限是否已经被授予，如果没有被授予则会去申请权限，如果已经被授予则会直接执行回调。
-     *
-     * @param permissions 要申请的权限。
-     * @param listener 申请结果的监听。如果回调中的permissions为空则表示所有权限已经被获取，
-     * 否则就表示用户拒绝了某个或某些权限，而被拒绝的权限就是permissions集合中的权限。
-     *
-     *
-     * **注意：**
-     * 该方法与 applyPermissions 方法有以下两点不同：
-     *
-     * 1.调用该方法申请权限都是必须的，也就是说只要其中任何一个权限被用户拒绝都应该中断流程。
-     *
-     * 2.该方法中所申请的权限会一直提示用户授权直到用户授予了所申请的全部权限。除非用户点击了不再询问才有可能终止询问。
-     *
-     * **如果你想强制申请权限，请使用 ```forceApplyPermissions``` 方法。如果你一次申请了N个权限，而希望有些权限是强制的有些权限是为强制的
-     * 的话可以使用 ```fun applyPermissions(Permission)``` 方法。**
-     *
-     * @see applyPermissions
-     *
-     * @see mixApplyPermissions
-     */
-    fun forceApplyPermissions(
-        vararg permissions: String,
-        listener: (permissions: Array<out String>) -> Unit
-    ) {
-        val function: (Boolean, Array<out String>) -> Unit = { _, ps ->
-            listener(ps)
-        }
-        val targetPermissions = permissions.map { Permission.createDefault(it, true) }.toTypedArray()
-        checkPermissionsRegistered(targetPermissions)
-        doOnApplyPermission(targetPermissions, function)
-    }
-
-
-    /**
-     * **混合申请权限。**
-     *
-     * 所谓混合是指同事申请必要权限和非必要权限。
-     * 当需要申请系统权限的时候调用，调用者无需关心要申请的权限是否已经被用户授予。只需无脑调用该方法即可。
-     * 该方法会自动检测权限是否已经被授予，如果没有被授予则会去申请权限，如果已经被授予则会直接执行回调。
-     *
-     * @param permissions 要申请的权限。
-     * @param listener 申请结果的监听。如果回调中的permissions为空则表示所有权限已经被获取，
-     * 否则就表示用户拒绝了某个或某些权限，而被拒绝的权限就是permissions集合中的权限。
-     */
-    fun mixApplyPermissions(
-        vararg permissions: Permission,
-        listener: (granted: Boolean, permissions: Array<out String>) -> Unit
-    ) {
-        checkPermissionsRegistered(permissions)
-        doOnApplyPermission(permissions, listener)
-    }
-
-    private fun checkPermissionsRegistered(permissions: Array<out Permission>) {
+    fun addWeakPermissions(vararg permissions: String): OkPermission {
         val context = activity
         if (context != null) {
-            val registeredPermissions =
-                context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS)
-                    .requestedPermissions
-            val unregisteredPermissions = permissions.filter { !registeredPermissions.contains(it.permission) }
-            if (unregisteredPermissions.isNotEmpty()) {
-                throw IllegalStateException(
-                    "There are some permissions aren't registered in the manifest file! The following:\n${unregisteredPermissions.joinToString(
-                        "\n"
-                    )}\n"
-                )
-            }
+            checkPermissionsRegistered(context, *permissions)
+            needPermissions.addAll(permissions.map { Permission.createWeak(it, false) })
         }
+        return this
+    }
+
+    /**
+     * **添加申请权限。**
+     *
+     * 通过该方法添加的权限会尽量的引导用户进行授权。
+     * 如果你的权限是必须的你可以调用```addForcePermissions```，如你要申请的权限用户受不授权根本无关痛痒
+     * 用户授权更好不授权也不会阻塞流程则建议调用```addWeakPermissions```。
+     *
+     * @param permissions 要进行弱申请的权限。
+     *
+     * @see addWeakPermissions
+     *
+     * @see addForcePermissions
+     */
+    fun addDefaultPermissions(vararg permissions: String): OkPermission {
+        val context = activity
+        if (context != null) {
+            checkPermissionsRegistered(context, *permissions)
+            needPermissions.addAll(permissions.map { Permission.createWeak(it, false) })
+        }
+        return this
+    }
+
+    /**
+     * **添加强制申请权限，也就是必要权限。**
+     *
+     * 通过该方法添加的权限会强制用户进行授权，如果用户不授权则会一直引导用户进行授权。
+     * 如你希望尽可能的初始用户同意你的权限但有不希望有不好的体验你可以调用```addDefaultPermissions```，
+     * 如你要申请的权限用户受不授权根本无关痛痒用户授权更好不授权也不会阻塞流程则建议调用```addWeakPermissions```。
+     *
+     * @param permissions 要进行弱申请的权限。
+     *
+     * @see addWeakPermissions
+     *
+     * @see addDefaultPermissions
+     */
+    fun addForcePermissions(vararg permissions: String): OkPermission {
+        val context = activity
+        if (context != null) {
+            checkPermissionsRegistered(context, *permissions)
+            needPermissions.addAll(permissions.map { Permission.createWeak(it, false) })
+        }
+        return this
+    }
+
+    /**
+     * 添加通知权限。
+     *
+     * @param necessary 是否是必要权限。
+     * @param channels 要检查或申请的通知权限的Channel。虽然Channel的概念是Android8.0才出现的而你调用改方法时
+     * 无需判断当前是什么版本的系统，只需要将你适配了的Channel传进来就行了。如果当前版>=8.0才会去检测这些Channel。
+     */
+    fun addNotificationPermission(necessary: Boolean = false, vararg channels: String): OkPermission {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            needPermissions.addAll(channels.map { Permission.createNotification(it, necessary) })
+        } else {
+            needPermissions.add(Permission.createDefault(permission.NOTIFICATION, necessary))
+        }
+        return this
+    }
+
+    /**
+     * 检测并申请权限，每当你需要使用必须申请权限在能使用的功能时你无需关心权限是否已经被用户授权，你只需要将你需要的权限
+     * 通过```add***Permissions```方法添加进来，然后调用该方法即可。调用该方法后会首先去检测权限是否已经被授权使用，如果已经
+     * 被授权使用则直接进行回调，如果没有或部分权限没有被授权使用则会针对没有授权的权限进行申请，等用户操作完毕后再进行回调。
+     *
+     * @param onApplyFinished
+     *
+     * **第一个(Boolean)参数：** 回调方法中有两个参数，通常情况下你只需要关心第一个(Boolean)参数即可，这个参数是告诉你用户是否同意了你本次的权限请求，
+     * 如果为true则表示用户已经同意，否则则表示用于没有同意或没有全部同意(如果你本次请求的是多个权限的话)，这里所说的全部只是
+     * 指必要权限，即通过```addForcePermissions```方法添加的权限。其实你可以这么理解，如果你本次申请权限调用了```addForcePermissions```
+     * 方法添加了一些权限，那么如果这些权限中任何一个权限被拒绝则改参数的值则为false，否则即为true。
+     * 如果你没有调用```addForcePermissions```方法那个只有所申请的全部权限都被赋予改参数才会为true，否者即为false。
+     *
+     * **第二个(Array<out String>)参数：** 相比第一个参数第二个参数就简单的多了，他总是一个容纳了哪些被用户拒绝了的权限。你可以根据
+     * 这个容器中的内容判断你所关心的权限是否被授权使用了，如果该容器中包含了你关心的权限那么就是该权限被拒绝了，否则就是被授权使用了。
+     *
+     * @see addWeakPermissions
+     *
+     * @see addDefaultPermissions
+     *
+     * @see addForcePermissions
+     */
+    fun checkAndApply(onApplyFinished: (granted: Boolean, permissions: Array<out String>) -> Unit) {
+        doOnApplyPermission(onApplyFinished)
     }
 
     /**
@@ -224,42 +250,35 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
     /**
      * 拦截设置页面Intent生产器，由自己实现指定页面的跳转。该方法必须要在apply等相关申请权限的方法前调用。
      */
-    fun interceptSettingIntentGenerator(interceptor: () -> SettingIntentGenerator): OkPermission {
+    fun interceptSettingIntentGenerator(interceptor: (permission: Permission) -> SettingIntentGenerator?): OkPermission {
         settingIntentGeneratorInterceptor = interceptor
         return this
     }
 
-    /**
-     * 检测权限授予情况。如果所有权限已被授予则直接回调，否则就去尝试获取权限。
-     *
-     * @param permissions 要申请的权限。
-     * @param listener 申请结果的监听。如果回调中的permissions为空则表示所有权限已经被获取，
-     * 否则就表示用户拒绝了某个或某些权限，而被拒绝的权限就是permissions集合中的权限。
-     */
-    private fun doOnApplyPermission(
-        permissions: Array<out Permission>,
-        listener: (granted: Boolean, permissions: Array<out String>) -> Unit
-    ) {
+    private fun doOnApplyPermission(onApplyFinished: (granted: Boolean, permissions: Array<out String>) -> Unit) {
         val activity = activity
         if (activity != null) {
-            createApplicantManager(permissions)?.startApply(listener)
+            if (needPermissions.isEmpty()) {
+                needPermissions.addAll(getManifestPermissions(activity).map { Permission.createDefault(it, false) })
+            }
+            createApplicantManager()?.startApply(onApplyFinished)
         }
     }
 
-    private fun createApplicantManager(permissions: Array<out Permission>): ApplicantManager? {
-        if (permissions.isEmpty()) {
-            throw NullPointerException("The permission is empty!")
-        }
+    private fun createApplicantManager(): ApplicantManager? {
         val context = activity
         if (context != null) {
             val applicants = HashMap<Class<out PermissionsApplicant>, PermissionsApplicant>()
-            permissions.forEach {
+            needPermissions.forEach {
                 val applicantClass = if (checkPermissionTypeInterceptor?.interceptMake(it) == true) {
                     checkPermissionTypeInterceptor!!.makeApplicant(it)
                 } else {
                     when (it.permission) {
                         Manifest.permission.REQUEST_INSTALL_PACKAGES -> {
                             ApkInstallApplicant::class.java
+                        }
+                        permission.NOTIFICATION -> {
+                            NotificationApplicant::class.java
                         }
                         else -> {
                             DefaultApplicant::class.java
@@ -269,11 +288,8 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
                 val a = applicants[applicantClass]
                 if (a == null) {
                     val applicant = applicantClass.getConstructor(Activity::class.java).newInstance(context)
-                    if (applicant is ApkInstallApplicant && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        applicant.apkInstallPermissionIntentGenerator = ApkInstallPermissionIntentGenerator()
-                    }
                     applicant.intentGenerator =
-                        settingIntentGeneratorInterceptor?.invoke() ?: createSettingIntentGenerator()
+                        settingIntentGeneratorInterceptor?.invoke(it) ?: createSettingIntentGenerator(it)
                     applicant.addPermission(it)
                     applicant.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
                     applicants[applicantClass] = applicant
@@ -285,20 +301,6 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
             return ApplicantManager(applicants.values)
         } else {
             return null
-        }
-    }
-
-    private fun createSettingIntentGenerator(): SettingIntentGenerator {
-        return when {
-            BRAND.contains("huawei") -> EMUISettingsIntentGenerator()
-            BRAND.contains("xiaomi") -> MIUISettingsIntentGenerator()
-            BRAND.contains("oppo") -> OPPOSettingsIntentGenerator()
-            BRAND.contains("vivo") -> VIVOSettingsIntentGenerator()
-            BRAND.contains("meizu") -> MeiZuSettingsIntentGenerator()
-            BRAND.contains("sony") -> SonySettingsIntentGenerator()
-            BRAND.contains("lg") -> LGSettingsIntentGenerator()
-            BRAND.contains("letv") -> LSSettingsIntentGenerator()
-            else -> AppDetailIntentGenerator()
         }
     }
 
