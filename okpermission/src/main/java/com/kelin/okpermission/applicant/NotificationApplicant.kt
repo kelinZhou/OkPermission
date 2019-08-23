@@ -55,7 +55,7 @@ class NotificationApplicant(activity: Activity) : PermissionsApplicant(activity)
         }
         OkActivityResult.instance.startActivityForResult(
             activity,
-            intentGenerator.onGeneratorNotificationIntent(
+            intentGenerator.generatorIntent(
                 activity,
                 if (channels.size == 1) {
                     channels[0]

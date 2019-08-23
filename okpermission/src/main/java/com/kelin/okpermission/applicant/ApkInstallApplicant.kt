@@ -36,7 +36,7 @@ class ApkInstallApplicant(context: Activity) : PermissionsApplicant(context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             OkActivityResult.instance.startActivityForResult(
                 activity,
-                intentGenerator.onGeneratorDangerousIntent(activity)
+                intentGenerator.generatorIntent(activity)
             ) { _, _ , e->
                 if (e == null && activity.packageManager.canRequestPackageInstalls()) {
                     onResult(emptyArray())

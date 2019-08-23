@@ -37,6 +37,10 @@ class MainActivity : AppCompatActivity() {
                 OkPermission.gotoNotificationPermissionPage(this)
                 true
             }
+            R.id.menuGoToSystemWindow -> {
+                OkPermission.gotoSystemWindowPermissionPage(this)
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -171,12 +175,24 @@ class MainActivity : AppCompatActivity() {
 
         tv8.setOnClickListener {
             OkPermission.with(this)
-                .addNotificationPermission(false, "system")
+                .addNotificationPermission(true, "system")
                 .checkAndApply { granted, permissions ->
                     if (granted) {
                         NotificationHelper.instance.sendNotification(2, "权限变更", "用户已授权通知权限")
                     } else {
                         Toast.makeText(this, "用户拒绝了通知权限", Toast.LENGTH_SHORT).show()
+                    }
+                }
+        }
+
+        tv9.setOnClickListener {
+            OkPermission.with(this)
+                .addDefaultPermissions(Manifest.permission.SYSTEM_ALERT_WINDOW)
+                .checkAndApply { granted, permissions ->
+                    if (granted) {
+                        Toast.makeText(this, "悬浮窗权限已开启", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "悬浮窗权限已禁用", Toast.LENGTH_SHORT).show()
                     }
                 }
         }

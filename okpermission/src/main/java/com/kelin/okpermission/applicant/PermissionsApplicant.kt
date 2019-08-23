@@ -10,8 +10,8 @@ import android.support.v7.app.AlertDialog
 import android.util.SparseArray
 import com.kelin.okpermission.OkActivityResult
 import com.kelin.okpermission.Renewable
-import com.kelin.okpermission.intentgenerator.AppDetailIntentGenerator
-import com.kelin.okpermission.intentgenerator.SettingIntentGenerator
+import com.kelin.okpermission.applicant.intentgenerator.AppDetailIntentGenerator
+import com.kelin.okpermission.applicant.intentgenerator.SettingIntentGenerator
 import com.kelin.okpermission.permission.Permission
 import com.kelin.okpermission.router.BasicRouter
 import com.kelin.okpermission.router.PermissionRequestRouter
@@ -162,7 +162,7 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
         if (isContinue) {
             OkActivityResult.instance.startActivityForResult(
                 activity,
-                intentGenerator.onGeneratorDangerousIntent(activity)
+                intentGenerator.generatorIntent(activity)
             ) { _, _, e ->
                 if (e == null) {
                     applyPermission(
@@ -172,7 +172,7 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
                 } else {
                     OkActivityResult.instance.startActivityForResult(
                         activity,
-                        AppDetailIntentGenerator(null).onGeneratorDangerousIntent(activity)
+                        AppDetailIntentGenerator(null).generatorIntent(activity)
                     ) { _, _, exception ->
                         if (exception == null) {
                             applyPermission(

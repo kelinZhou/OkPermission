@@ -1,4 +1,4 @@
-package com.kelin.okpermission.intentgenerator
+package com.kelin.okpermission.applicant.intentgenerator
 
 import android.content.Context
 import android.content.Intent
@@ -8,7 +8,7 @@ import com.kelin.okpermission.permission.Permission
 
 
 /**
- * **描述:** 360手机的Application详情页的意图构建器。
+ * **描述:** LG的Application详情页的意图构建器。
  *
  * **创建人:** kelin
  *
@@ -16,12 +16,12 @@ import com.kelin.okpermission.permission.Permission
  *
  * **版本:** v 1.0.0
  */
-class Safe360SettingsIntentGenerator(override val permission: Permission?) : SettingIntentGenerator() {
+class LGSettingsIntentGenerator(permission: Permission?) : SettingIntentGenerator(permission) {
     override fun onGeneratorDangerousIntent(context: Context): Intent {
         val intent = Intent("android.intent.action.MAIN")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         intent.putExtra("packageName", BuildConfig.APPLICATION_ID)
-        intent.component = ComponentName("com.qihoo360.mobilesafe", "com.qihoo360.mobilesafe.ui.index.AppEnterActivity")
+        intent.component = ComponentName("com.android.settings", "com.android.settings.Settings\$AccessLockSummaryActivity")
         return intent
     }
 }

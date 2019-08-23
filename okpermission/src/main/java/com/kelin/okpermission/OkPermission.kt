@@ -6,11 +6,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.support.annotation.RequiresApi
-import com.kelin.okpermission.applicant.ApkInstallApplicant
-import com.kelin.okpermission.applicant.DefaultApplicant
-import com.kelin.okpermission.applicant.NotificationApplicant
-import com.kelin.okpermission.applicant.PermissionsApplicant
-import com.kelin.okpermission.intentgenerator.*
+import com.kelin.okpermission.applicant.*
+import com.kelin.okpermission.applicant.intentgenerator.*
 import com.kelin.okpermission.permission.Permission
 import java.lang.ref.WeakReference
 
@@ -59,12 +56,25 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
 
         @RequiresApi(Build.VERSION_CODES.O)
         fun gotoInstallPermissionPage(context: Context) {
-            context.startActivity(createSettingIntentGenerator(Permission.createDefault(Manifest.permission.REQUEST_INSTALL_PACKAGES)).generatorIntent(context))
+            context.startActivity(
+                createSettingIntentGenerator(Permission.createDefault(Manifest.permission.REQUEST_INSTALL_PACKAGES)).generatorIntent(
+                    context
+                )
+            )
         }
 
         fun gotoNotificationPermissionPage(context: Context, channel: String = "") {
-            val permission =  Permission.createNotification(channel)
-            context.startActivity(createSettingIntentGenerator(permission).generatorIntent(context))
+            context.startActivity(
+                createSettingIntentGenerator(Permission.createNotification(channel))
+                    .generatorIntent(context)
+            )
+        }
+
+        fun gotoSystemWindowPermissionPage(context: Context) {
+            context.startActivity(
+                createSettingIntentGenerator(Permission.createDefault(Manifest.permission.SYSTEM_ALERT_WINDOW))
+                    .generatorIntent(context)
+            )
         }
 
         /**
@@ -113,6 +123,8 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
                 BRAND.contains("lg") -> LGSettingsIntentGenerator(permission)
                 BRAND.contains("lemobile") -> LSSettingsIntentGenerator(permission)
                 BRAND.contains("360") -> Safe360SettingsIntentGenerator(permission)
+                BRAND.contains("samsung") -> SamSungSettingsIntentGenerator(permission)
+                BRAND.contains("smartisan") -> SMARTISANSettingsIntentGenerator(permission)
                 else -> AppDetailIntentGenerator(permission)
             }
         }
@@ -205,7 +217,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
      * 无需判断当前是什么版本的系统，只需要将你适配了的Channel传进来就行了。如果当前版>=8.0才会去检测这些Channel。
      */
     fun addNotificationPermission(necessary: Boolean = false, vararg channels: String): OkPermission {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && channels.isNotEmpty()) {
             needPermissions.addAll(channels.map { Permission.createNotification(it, necessary) })
         } else {
             needPermissions.add(Permission.createDefault(permission.NOTIFICATION, necessary))
@@ -276,6 +288,9 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
                     when (it.permission) {
                         Manifest.permission.REQUEST_INSTALL_PACKAGES -> {
                             ApkInstallApplicant::class.java
+                        }
+                        Manifest.permission.SYSTEM_ALERT_WINDOW -> {
+                            SystemWindowApplicant::class.java
                         }
                         permission.NOTIFICATION -> {
                             NotificationApplicant::class.java

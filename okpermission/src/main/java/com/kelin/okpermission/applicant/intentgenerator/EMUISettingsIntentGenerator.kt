@@ -1,9 +1,8 @@
-package com.kelin.okpermission.intentgenerator
+package com.kelin.okpermission.applicant.intentgenerator
 
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import com.kelin.okpermission.BuildConfig
 import com.kelin.okpermission.permission.Permission
 
 /**
@@ -15,7 +14,7 @@ import com.kelin.okpermission.permission.Permission
  *
  * **版本:** v 1.0.0
  */
-class EMUISettingsIntentGenerator(override val permission: Permission?) : SettingIntentGenerator() {
+class EMUISettingsIntentGenerator(permission: Permission?) : SettingIntentGenerator(permission) {
     override fun onGeneratorDangerousIntent(context: Context): Intent {
         val intent = Intent()
 

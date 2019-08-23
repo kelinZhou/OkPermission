@@ -1,4 +1,4 @@
-package com.kelin.okpermission.intentgenerator
+package com.kelin.okpermission.applicant.intentgenerator
 
 import android.content.Context
 import android.content.Intent
@@ -16,7 +16,7 @@ import com.kelin.okpermission.permission.Permission
  *
  * **版本:** v 1.0.0
  */
-class SonySettingsIntentGenerator(override val permission: Permission?) : SettingIntentGenerator() {
+class SonySettingsIntentGenerator(permission: Permission?) : SettingIntentGenerator(permission) {
     override fun onGeneratorDangerousIntent(context: Context): Intent {
         val intent = Intent()
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
