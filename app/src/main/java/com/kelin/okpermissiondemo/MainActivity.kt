@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         tv0.setOnClickListener {
             OkPermission.with(this)
-                .addWeakPermissions(Manifest.permission.CALL_PHONE, Manifest.permission.CAMERA)
+                .addWeakPermissions(Manifest.permission.READ_PHONE_STATE)
                 .checkAndApply { granted, permissions ->
                     if (granted) {
                         Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
@@ -120,9 +120,10 @@ class MainActivity : AppCompatActivity() {
                 .addDefaultPermissions(
                     Manifest.permission.CALL_PHONE,
                     Manifest.permission.CAMERA,
-                    Manifest.permission.REQUEST_INSTALL_PACKAGES,
-                    OkPermission.permission.NOTIFICATION
-                ).checkAndApply { granted, permissions ->
+                    Manifest.permission.REQUEST_INSTALL_PACKAGES
+                )
+                .addNotificationPermission(false, "系统消息")
+                .checkAndApply { granted, permissions ->
                     if (granted) {
                         Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
                     } else if (!permissions.contains(Manifest.permission.REQUEST_INSTALL_PACKAGES)) {
@@ -175,7 +176,7 @@ class MainActivity : AppCompatActivity() {
 
         tv8.setOnClickListener {
             OkPermission.with(this)
-                .addNotificationPermission(true, "system")
+                .addNotificationPermission(true, "系统消息")
                 .checkAndApply { granted, permissions ->
                     if (granted) {
                         NotificationHelper.instance.sendNotification(2, "权限变更", "用户已授权通知权限")

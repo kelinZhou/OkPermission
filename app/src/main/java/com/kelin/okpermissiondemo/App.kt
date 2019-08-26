@@ -15,6 +15,6 @@ import com.kelin.okpermission.OkPermission
 class App : Application(){
     override fun onCreate() {
         super.onCreate()
-        NotificationHelper.init(this)
+        NotificationHelper.init(this, R.string.system_message)
     }
 }

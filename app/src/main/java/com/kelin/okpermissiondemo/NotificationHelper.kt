@@ -11,6 +11,7 @@ import android.support.v4.app.NotificationCompat
 
 import android.app.Notification.PRIORITY_DEFAULT
 import android.app.Notification.VISIBILITY_SECRET
+import android.support.annotation.StringRes
 
 /**
  * **描述:** 系统通知工具。
@@ -28,44 +29,64 @@ class NotificationHelper private constructor(base: Context) : ContextWrapper(bas
 
     private val manager: NotificationManager by lazy { getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager }
 
-    private fun init() {
+    private val currentChannels = ArrayList<String>()
+
+    private val defaultChannel: String
+        get() = if (currentChannels.isEmpty()) {
+            ""
+        } else {
+            currentChannels[0]
+        }
+
+    private fun init(channels: Array<out String>) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            createNotificationChannel()
+            createNotificationChannel(channels)
         }
     }
 
     @TargetApi(Build.VERSION_CODES.O)
-    private fun createNotificationChannel() {
-        val channel =
-            NotificationChannel(CHANNEL_ID, getString(R.string.system_message), NotificationManager.IMPORTANCE_HIGH)
-        //是否绕过请勿打扰模式
-        channel.canBypassDnd()
-        //闪光灯
-        channel.enableLights(true)
-        //锁屏显示通知
-        channel.lockscreenVisibility = VISIBILITY_SECRET
-        //闪关灯的灯光颜色
-        channel.lightColor = Color.RED
-        //桌面launcher的消息角标
-        channel.canShowBadge()
-        //是否允许震动
-        channel.enableVibration(true)
-        //获取系统通知响铃声音的配置
-        channel.audioAttributes
-        //获取通知取到组
-        channel.group
-        //设置可绕过  请勿打扰模式
-        channel.setBypassDnd(true)
-        //设置震动模式
-        channel.vibrationPattern = longArrayOf(100, 100, 200)
-        //是否会有灯光
-        channel.shouldShowLights()
-        manager.createNotificationChannel(channel)
+    private fun createNotificationChannel(channels: Array<out String>) {
+        if (channels.isNotEmpty()) {
+            currentChannels.clear()
+            currentChannels.addAll(channels)
+            val channelList = ArrayList<NotificationChannel>(channels.size)
+            for (c in channels) {
+                val channel = NotificationChannel(
+                    c,
+                    c,
+                    NotificationManager.IMPORTANCE_HIGH
+                )
+                //是否绕过请勿打扰模式
+                channel.canBypassDnd()
+                //闪光灯
+                channel.enableLights(true)
+                //锁屏显示通知
+                channel.lockscreenVisibility = VISIBILITY_SECRET
+                //闪关灯的灯光颜色
+                channel.lightColor = Color.RED
+                //桌面launcher的消息角标
+                channel.canShowBadge()
+                //是否允许震动
+                channel.enableVibration(true)
+                //获取系统通知响铃声音的配置
+                channel.audioAttributes
+                //获取通知取到组
+                channel.group
+                //设置可绕过  请勿打扰模式
+                channel.setBypassDnd(true)
+                //设置震动模式
+                channel.vibrationPattern = longArrayOf(100, 100, 200)
+                //是否会有灯光
+                channel.shouldShowLights()
+                channelList.add(channel)
+            }
+            manager.createNotificationChannels(channelList)
+        }
     }
 
-    private fun getNotification(title: String, content: String): NotificationCompat.Builder {
+    private fun getNotification(title: String, content: String, channel: String): NotificationCompat.Builder {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationCompat.Builder(applicationContext, CHANNEL_ID).apply {
+            NotificationCompat.Builder(applicationContext, channel).apply {
                 priority = NotificationManager.IMPORTANCE_HIGH
             }
         } else {
@@ -89,24 +110,24 @@ class NotificationHelper private constructor(base: Context) : ContextWrapper(bas
     /**
      * 发送通知
      */
-    fun sendNotification(title: String, content: String) {
-        val builder = getNotification(title, content)
+    fun sendNotification(title: String, content: String, channel: String = defaultChannel) {
+        val builder = getNotification(title, content, channel)
         manager.notify(1, builder.build())
     }
 
     /**
      * 发送通知
      */
-    fun sendNotification(notifyId: Int, title: String, content: String) {
-        val builder = getNotification(title, content)
+    fun sendNotification(notifyId: Int, title: String, content: String, channel: String = defaultChannel) {
+        val builder = getNotification(title, content, channel)
         manager.notify(notifyId, builder.build())
     }
 
     /**
      * 发送带有进度的通知
      */
-    fun sendNotificationProgress(title: String, content: String, progress: Int, intent: PendingIntent) {
-        val builder = getNotificationProgress(title, content, progress, intent)
+    fun sendNotificationProgress(title: String, content: String, progress: Int, intent: PendingIntent, channel: String = defaultChannel) {
+        val builder = getNotificationProgress(title, content, progress, intent, channel)
         manager.notify(0, builder.build())
     }
 
@@ -114,11 +135,14 @@ class NotificationHelper private constructor(base: Context) : ContextWrapper(bas
      * 获取带有进度的Notification
      */
     private fun getNotificationProgress(
-        title: String, content: String,
-        progress: Int, intent: PendingIntent
+        title: String,
+        content: String,
+        progress: Int,
+        intent: PendingIntent,
+        channel: String
     ): NotificationCompat.Builder {
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+            NotificationCompat.Builder(applicationContext, channel)
         } else {
             NotificationCompat.Builder(applicationContext).apply {
                 priority = PRIORITY_DEFAULT
@@ -152,7 +176,6 @@ class NotificationHelper private constructor(base: Context) : ContextWrapper(bas
     }
 
     companion object {
-        private const val CHANNEL_ID = "system"
         private var applicationContext: Context? = null
         val instance: NotificationHelper by lazy {
             val context = applicationContext
@@ -164,9 +187,14 @@ class NotificationHelper private constructor(base: Context) : ContextWrapper(bas
             }
         }
 
-        fun init(context: Context) {
+        fun init(context: Context, vararg channels: String) {
             applicationContext = context.applicationContext
-            instance.init()
+            instance.init(channels)
+        }
+
+        fun init(context: Context, @StringRes vararg channels: Int) {
+            applicationContext = context.applicationContext
+            instance.init(channels.map { context.resources.getString(it) }.toTypedArray())
         }
     }
 }

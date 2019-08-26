@@ -160,7 +160,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
         val context = activity
         if (context != null) {
             checkPermissionsRegistered(context, *permissions)
-            needPermissions.addAll(permissions.map { Permission.createWeak(it, false) })
+            needPermissions.addAll(permissions.map { Permission.createWeak(it, true) })
         }
         return this
     }
@@ -182,7 +182,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
         val context = activity
         if (context != null) {
             checkPermissionsRegistered(context, *permissions)
-            needPermissions.addAll(permissions.map { Permission.createWeak(it, false) })
+            needPermissions.addAll(permissions.map { Permission.createDefault(it, false) })
         }
         return this
     }
@@ -204,7 +204,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
         val context = activity
         if (context != null) {
             checkPermissionsRegistered(context, *permissions)
-            needPermissions.addAll(permissions.map { Permission.createWeak(it, false) })
+            needPermissions.addAll(permissions.map { Permission.createDefault(it, true) })
         }
         return this
     }

@@ -59,17 +59,37 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
         applyPermissions: Array<out Permission> = permissions,
         finished: () -> Unit
     ) {
+        if (applyPermissions.all { checkSelfPermissions(it) }) {
+            finished()
+        } else {
+            onRequestPermissions(applyPermissions, finished)
+        }
+    }
+
+    private fun applyPermissionAgain(
+        applyPermissions: Array<out Permission> = permissions,
+        finished: () -> Unit
+    ) {
         var needCheck = true
         val router = getRouter(activity)
-        applyPermissions.forEach {
-            val granted = checkSelfPermissions(it)
+        val deniedPermissions = ArrayList<Permission>()
+        val canRequestPermissions = ArrayList<Permission>()
+        for (permission in applyPermissions) {
+            val granted = checkSelfPermissions(permission)
             if (!granted) {
                 isGranted = false
+                if (!permission.isWeak) {
+                    if (shouldShowRequestPermissionRationale(router, permission)) {
+                        canRequestPermissions.add(permission)
+                    } else {
+                        deniedPermissions.add(permission)
+                    }
+                }
             }
-            if (it.necessary && !granted && !shouldShowRequestPermissionRationale(router, it)) {
-                needCheck = false
-                showMissingPermissionDialog(applyPermissions, finished)
-            }
+        }
+        if (canRequestPermissions.isEmpty() && deniedPermissions.isNotEmpty()) {
+            needCheck = false
+            showMissingPermissionDialog(applyPermissions, finished)
         }
         if (needCheck) {
             if (isGranted) {
@@ -120,7 +140,7 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
         finished: () -> Unit
     ) {
         if (isContinue) {
-            applyPermission(deniedPermissions, finished)
+            applyPermissionAgain(deniedPermissions, finished)
         } else {
             isGranted =
                 if (permissionList.any { it.necessary }) !deniedPermissions.any { it.necessary } else deniedPermissions.isEmpty()
@@ -165,7 +185,7 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
                 intentGenerator.generatorIntent(activity)
             ) { _, _, e ->
                 if (e == null) {
-                    applyPermission(
+                    applyPermissionAgain(
                         filterWeak(deniedPermissions),
                         finished
                     )
@@ -175,7 +195,7 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
                         AppDetailIntentGenerator(null).generatorIntent(activity)
                     ) { _, _, exception ->
                         if (exception == null) {
-                            applyPermission(
+                            applyPermissionAgain(
                                 filterWeak(deniedPermissions),
                                 finished
                             )
