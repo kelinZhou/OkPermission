@@ -20,7 +20,7 @@ import com.kelin.okpermission.router.PermissionRequestRouter
  */
 class NotificationApplicant(activity: Activity) : PermissionsApplicant(activity) {
 
-    override fun checkSelfPermissions(permission: Permission): Boolean {
+    override fun checkSelfPermission(permission: Permission): Boolean {
         return NotificationManagerCompat.from(applicationContext).areNotificationsEnabled() && if (permission is Permission.NotificationPermission) {
             isNotificationChannelEnabled(permission.channel)
         } else {

@@ -38,7 +38,10 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
     private val permissions: Array<out Permission>
         get() = permissionList.toTypedArray()
 
-    protected abstract fun checkSelfPermissions(permission: Permission): Boolean
+    internal val checkDeniedPermissions: List<Permission>
+        get() = permissionList.filter { !checkSelfPermission(it) }
+
+    protected abstract fun checkSelfPermission(permission: Permission): Boolean
 
     protected abstract fun shouldShowRequestPermissionRationale(
         router: PermissionRequestRouter,
@@ -59,7 +62,7 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
         applyPermissions: Array<out Permission> = permissions,
         finished: () -> Unit
     ) {
-        if (applyPermissions.all { checkSelfPermissions(it) }) {
+        if (applyPermissions.all { checkSelfPermission(it) }) {
             finished()
         } else {
             onRequestPermissions(applyPermissions, finished)
@@ -75,7 +78,7 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
         val deniedPermissions = ArrayList<Permission>()
         val canRequestPermissions = ArrayList<Permission>()
         for (permission in applyPermissions) {
-            val granted = checkSelfPermissions(permission)
+            val granted = checkSelfPermission(permission)
             if (!granted) {
                 isGranted = false
                 if (!permission.isWeak) {

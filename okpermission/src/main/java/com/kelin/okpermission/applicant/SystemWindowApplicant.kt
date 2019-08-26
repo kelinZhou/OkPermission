@@ -23,7 +23,7 @@ import java.lang.reflect.Method
  */
 class SystemWindowApplicant(activity: Activity) : PermissionsApplicant(activity) {
 
-    override fun checkSelfPermissions(permission: Permission): Boolean {
+    override fun checkSelfPermission(permission: Permission): Boolean {
         return checkSystemPermission()
     }
 

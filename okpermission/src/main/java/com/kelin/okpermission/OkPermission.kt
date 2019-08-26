@@ -230,6 +230,8 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
      * 通过```add***Permissions```方法添加进来，然后调用该方法即可。调用该方法后会首先去检测权限是否已经被授权使用，如果已经
      * 被授权使用则直接进行回调，如果没有或部分权限没有被授权使用则会针对没有授权的权限进行申请，等用户操作完毕后再进行回调。
      *
+     * 注意：如果没有通过```add***Permissions```方法添加权限的话会检测清单文件中注册了的所有权限。
+     *
      * @param onApplyFinished
      *
      * **第一个(Boolean)参数：** 回调方法中有两个参数，通常情况下你只需要关心第一个(Boolean)参数即可，这个参数是告诉你用户是否同意了你本次的权限请求，
@@ -249,6 +251,28 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
      */
     fun checkAndApply(onApplyFinished: (granted: Boolean, permissions: Array<out String>) -> Unit) {
         doOnApplyPermission(onApplyFinished)
+    }
+
+    /**
+     * 检查权限是否已经被授权，你需要将你需要的检查权限通过```add***Permissions```方法添加进来，然后调用该方法即可。
+     *
+     * 注意：如果没有通过```add***Permissions```方法添加权限的话会检测清单文件中注册了的所有权限。
+     *
+     * @param onApplyFinished 回调函数。
+     *
+     * **第一个(Boolean)参数：** 回调方法中有两个参数，通常情况下你只需要关心第一个(Boolean)参数即可，这个参数是告诉你用户是否已经授权了
+     * 你所检查的权限。如果为true则表示用户已经同意了所有权限，否则则表示用于没有同意或没有全部同意(如果你本次检查的是多个权限的话)，
+     *
+     * **第二个(Array<out String>)参数：** 该参数包含了所有的被拒绝了的权限，如果第一个参数的值为true的话该参数才会有值，否者将是一个空的数组。
+     */
+    fun check(onApplyFinished: (granted: Boolean, permissions: Array<out String>) -> Unit) {
+        val activity = activity
+        if (activity != null) {
+            if (needPermissions.isEmpty()) {
+                needPermissions.addAll(getManifestPermissions(activity).map { Permission.createDefault(it, false) })
+            }
+            createApplicantManager(activity)?.startCheck(onApplyFinished)
+        }
     }
 
     /**
@@ -273,50 +297,45 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
             if (needPermissions.isEmpty()) {
                 needPermissions.addAll(getManifestPermissions(activity).map { Permission.createDefault(it, false) })
             }
-            createApplicantManager()?.startApply(onApplyFinished)
+            createApplicantManager(activity)?.startApply(onApplyFinished)
         }
     }
 
-    private fun createApplicantManager(): ApplicantManager? {
-        val context = activity
-        if (context != null) {
-            val applicants = HashMap<Class<out PermissionsApplicant>, PermissionsApplicant>()
-            needPermissions.forEach {
-                val applicantClass = if (checkPermissionTypeInterceptor?.interceptMake(it) == true) {
-                    checkPermissionTypeInterceptor!!.makeApplicant(it)
-                } else {
-                    when (it.permission) {
-                        Manifest.permission.REQUEST_INSTALL_PACKAGES -> {
-                            ApkInstallApplicant::class.java
-                        }
-                        Manifest.permission.SYSTEM_ALERT_WINDOW -> {
-                            SystemWindowApplicant::class.java
-                        }
-                        permission.NOTIFICATION -> {
-                            NotificationApplicant::class.java
-                        }
-                        else -> {
-                            DefaultApplicant::class.java
-                        }
+    private fun createApplicantManager(context: Context): ApplicantManager? {
+        val applicants = HashMap<Class<out PermissionsApplicant>, PermissionsApplicant>()
+        needPermissions.forEach {
+            val applicantClass = if (checkPermissionTypeInterceptor?.interceptMake(it) == true) {
+                checkPermissionTypeInterceptor!!.makeApplicant(it)
+            } else {
+                when (it.permission) {
+                    Manifest.permission.REQUEST_INSTALL_PACKAGES -> {
+                        ApkInstallApplicant::class.java
+                    }
+                    Manifest.permission.SYSTEM_ALERT_WINDOW -> {
+                        SystemWindowApplicant::class.java
+                    }
+                    permission.NOTIFICATION -> {
+                        NotificationApplicant::class.java
+                    }
+                    else -> {
+                        DefaultApplicant::class.java
                     }
                 }
-                val a = applicants[applicantClass]
-                if (a == null) {
-                    val applicant = applicantClass.getConstructor(Activity::class.java).newInstance(context)
-                    applicant.intentGenerator =
-                        settingIntentGeneratorInterceptor?.invoke(it) ?: createSettingIntentGenerator(it)
-                    applicant.addPermission(it)
-                    applicant.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
-                    applicants[applicantClass] = applicant
-                } else {
-                    a.addPermission(it)
-                    a.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
-                }
             }
-            return ApplicantManager(applicants.values)
-        } else {
-            return null
+            val a = applicants[applicantClass]
+            if (a == null) {
+                val applicant = applicantClass.getConstructor(Activity::class.java).newInstance(context)
+                applicant.intentGenerator =
+                    settingIntentGeneratorInterceptor?.invoke(it) ?: createSettingIntentGenerator(it)
+                applicant.addPermission(it)
+                applicant.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
+                applicants[applicantClass] = applicant
+            } else {
+                a.addPermission(it)
+                a.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
+            }
         }
+        return ApplicantManager(applicants.values)
     }
 
     /**

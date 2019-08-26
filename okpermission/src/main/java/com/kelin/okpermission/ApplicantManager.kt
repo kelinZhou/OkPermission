@@ -37,4 +37,10 @@ class ApplicantManager(private var applicants: MutableCollection<PermissionsAppl
             listener(isGranted, deniedPermissions.map { it.permission }.toTypedArray())
         }
     }
+
+    fun startCheck(onApplyFinished: (granted: Boolean, permissions: Array<out String>) -> Unit) {
+        val deniedPermissions = ArrayList<Permission>()
+        applicants.forEach { deniedPermissions.addAll(it.checkDeniedPermissions) }
+        onApplyFinished(deniedPermissions.isEmpty(), deniedPermissions.map { it.permission }.toTypedArray())
+    }
 }
