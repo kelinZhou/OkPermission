@@ -22,7 +22,7 @@ allprojects {
 ###### 第二步：添加这个依赖。
 ```groovy
 dependencies {
-    implementation 'com.github.kelinZhou:OkPermission:2.0.2'
+    implementation 'com.github.kelinZhou:OkPermission:3.0.0'
 }
 ```
 
