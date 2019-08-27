@@ -176,7 +176,7 @@ class MainActivity : AppCompatActivity() {
 
         tv8.setOnClickListener {
             OkPermission.with(this)
-                .addNotificationPermission(true, "系统消息")
+                .addNotificationPermission(false, "系统消息")
                 .checkAndApply { granted, permissions ->
                     if (granted) {
                         NotificationHelper.instance.sendNotification(2, "权限变更", "用户已授权通知权限")

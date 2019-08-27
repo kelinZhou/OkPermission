@@ -265,13 +265,15 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
      *
      * **第二个(Array<out String>)参数：** 该参数包含了所有的被拒绝了的权限，如果第一个参数的值为true的话该参数才会有值，否者将是一个空的数组。
      */
-    fun check(onApplyFinished: (granted: Boolean, permissions: Array<out String>) -> Unit) {
+    fun check():Array<out String> {
         val activity = activity
-        if (activity != null) {
+        return if (activity != null) {
             if (needPermissions.isEmpty()) {
                 needPermissions.addAll(getManifestPermissions(activity).map { Permission.createDefault(it, false) })
             }
-            createApplicantManager(activity)?.startCheck(onApplyFinished)
+            createApplicantManager(activity)?.startCheck() ?: emptyArray()
+        } else {
+            needPermissions.map { it.permission }.toTypedArray()
         }
     }
 
@@ -288,6 +290,14 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
      */
     fun interceptSettingIntentGenerator(interceptor: (permission: Permission) -> SettingIntentGenerator?): OkPermission {
         settingIntentGeneratorInterceptor = interceptor
+        return this
+    }
+
+    /**
+     * 拦截设置页面Intent生产器，由自己实现指定页面的跳转。该方法必须要在apply等相关申请权限的方法前调用。
+     */
+    fun interceptCheckPermissionType(interceptor: MakeApplicantInterceptor): OkPermission {
+        checkPermissionTypeInterceptor = interceptor
         return this
     }
 
