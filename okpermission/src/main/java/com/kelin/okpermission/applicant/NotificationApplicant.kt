@@ -77,32 +77,36 @@ class NotificationApplicant(activity: Activity) : PermissionsApplicant(activity)
         router: PermissionRequestRouter,
         onResult: (permissions: Array<out Permission>) -> Unit
     ) {
-        val channels = permissions.filter {
-            it is Permission.NotificationPermission && it.channel.isNotEmpty()
-        }.map {
-            it as Permission.NotificationPermission
-        }.toTypedArray()
-        if (channels.isNotEmpty()) {
-            if (channels.all { isNotificationChannelEnabled(it.channel) }) {
-                onResult(emptyArray())
-            } else {
-                doOnRequestChannelsNotification(router, channels, ArrayList(), 0, onResult)
-            }
-        } else {
-            OkActivityResult.instance.startActivityForResult(
-                activity,
-                intentGenerator.generatorIntent(activity)
-            ) { _, _, e ->
-                if (e == null) {
-                    if (areNotificationsEnabled()) { //既然没有渠道就判断总开关就好了。
-                        onResult(emptyArray())
-                    } else {
-                        onResult(permissions)
-                    }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channels = permissions.filter {
+                it is Permission.NotificationPermission && it.channel.isNotEmpty()
+            }.map {
+                it as Permission.NotificationPermission
+            }.toTypedArray()
+            if (channels.isNotEmpty()) {
+                if (channels.all { isNotificationChannelEnabled(it.channel) }) {
+                    onResult(emptyArray())
                 } else {
-                    applyTryAgain(onResult, permissions)
+                    doOnRequestChannelsNotification(router, channels, ArrayList(), 0, onResult)
+                }
+            } else {
+                OkActivityResult.instance.startActivityForResult(
+                    activity,
+                    intentGenerator.generatorIntent(activity)
+                ) { _, _, e ->
+                    if (e == null) {
+                        if (areNotificationsEnabled()) { //既然没有渠道就判断总开关就好了。
+                            onResult(emptyArray())
+                        } else {
+                            onResult(permissions)
+                        }
+                    } else {
+                        applyTryAgain(onResult, permissions)
+                    }
                 }
             }
+        } else {
+            onResult(emptyArray())
         }
     }
 
