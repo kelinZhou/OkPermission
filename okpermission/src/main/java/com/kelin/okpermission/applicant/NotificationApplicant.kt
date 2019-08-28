@@ -21,12 +21,14 @@ import com.kelin.okpermission.router.PermissionRequestRouter
 class NotificationApplicant(activity: Activity) : PermissionsApplicant(activity) {
 
     override fun checkSelfPermission(permission: Permission): Boolean {
-        return NotificationManagerCompat.from(applicationContext).areNotificationsEnabled() && if (permission is Permission.NotificationPermission) {
+        return areNotificationsEnabled() && if (permission is Permission.NotificationPermission) {
             isNotificationChannelEnabled(permission.channel)
         } else {
             true
         }
     }
+
+    private fun areNotificationsEnabled() = NotificationManagerCompat.from(applicationContext).areNotificationsEnabled()
 
     private fun isNotificationChannelEnabled(channel: String): Boolean {
         return when {
@@ -50,31 +52,88 @@ class NotificationApplicant(activity: Activity) : PermissionsApplicant(activity)
         permissions: Array<out Permission>,
         onResult: (permissions: Array<out Permission>) -> Unit
     ) {
-        val channels = permissions.filter { it is Permission.NotificationPermission && it.channel.isNotEmpty() }.map {
-            it as Permission.NotificationPermission
+        if (areNotificationsEnabled()) {
+            onRequestChannels(permissions, router, onResult)
+        } else {
+            OkActivityResult.instance.startActivityForResult(
+                activity,
+                intentGenerator.generatorIntent(activity)
+            ) { _, _, e ->
+                if (e == null) {
+                    if (areNotificationsEnabled()) { //如果总开关开了就接着判断渠道
+                        onRequestChannels(permissions, router, onResult)
+                    } else { //如果总开关没开申请渠道没有意义，所以直接回调失败。
+                        onResult(permissions)
+                    }
+                } else {
+                    applyTryAgain(onResult, permissions)
+                }
+            }
         }
+    }
+
+    private fun onRequestChannels(
+        permissions: Array<out Permission>,
+        router: PermissionRequestRouter,
+        onResult: (permissions: Array<out Permission>) -> Unit
+    ) {
+        val channels = permissions.filter {
+            it is Permission.NotificationPermission && it.channel.isNotEmpty()
+        }.map {
+            it as Permission.NotificationPermission
+        }.toTypedArray()
+        if (channels.isNotEmpty()) {
+            if (channels.all { isNotificationChannelEnabled(it.channel) }) {
+                onResult(emptyArray())
+            } else {
+                doOnRequestChannelsNotification(router, channels, ArrayList(), 0, onResult)
+            }
+        } else {
+            OkActivityResult.instance.startActivityForResult(
+                activity,
+                intentGenerator.generatorIntent(activity)
+            ) { _, _, e ->
+                if (e == null) {
+                    if (areNotificationsEnabled()) { //既然没有渠道就判断总开关就好了。
+                        onResult(emptyArray())
+                    } else {
+                        onResult(permissions)
+                    }
+                } else {
+                    applyTryAgain(onResult, permissions)
+                }
+            }
+        }
+    }
+
+    private fun doOnRequestChannelsNotification(
+        router: PermissionRequestRouter,
+        permissions: Array<out Permission.NotificationPermission>,
+        deniedPermissions: MutableList<Permission.NotificationPermission>,
+        index: Int,
+        onResult: (permissions: Array<out Permission>) -> Unit
+    ) {
+        val curPermission = permissions[index]
         OkActivityResult.instance.startActivityForResult(
             activity,
             intentGenerator.generatorIntent(
                 activity,
-                if (channels.size == 1) {
-                    channels[0]
-                } else {
-                    null
-                }
+                curPermission
             )
         ) { _, _, e ->
             if (e == null) {
-                if (NotificationManagerCompat.from(activity).areNotificationsEnabled() && channels.all { isNotificationChannelEnabled(it.channel) }) {
-                    onResult(emptyArray())
+                if (!isNotificationChannelEnabled(curPermission.channel)) {
+                    deniedPermissions.add(curPermission)
+                }
+                if (index < permissions.lastIndex) {
+                    doOnRequestChannelsNotification(router, permissions, deniedPermissions, index + 1, onResult)
                 } else {
-                    onResult(permissions)
+                    onResult(deniedPermissions.toTypedArray())
                 }
             } else {
                 applyTryAgain(onResult, permissions)
             }
         }
-
     }
 
     private fun applyTryAgain(
