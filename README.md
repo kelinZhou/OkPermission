@@ -7,9 +7,7 @@
 本库是使用Kotlin语音开发的。可以优雅的申请Android6.0中的动态权限。
 
 ## 体验
-点击下载[DemoApk](https://fir.im/kmbz)
-
-或扫码下载
+[点击下载](https://fir.im/kmbz)或扫码下载DemoApk
 
 ![DemoApk](materials/demo_download.png)
 
