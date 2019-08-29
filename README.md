@@ -8,6 +8,8 @@
 
 ## 体验
 点击下载[DemoApk](https://fir.im/kmbz)
+或扫码下载
+![DemoApk](materials/demo_download.png)
 
 ## 下载
 ###### 第一步：添加 JitPack 仓库到你项目根目录的 gradle 文件中。
