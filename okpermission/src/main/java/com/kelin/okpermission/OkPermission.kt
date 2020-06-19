@@ -10,6 +10,9 @@ import com.kelin.okpermission.applicant.*
 import com.kelin.okpermission.applicant.intentgenerator.*
 import com.kelin.okpermission.permission.Permission
 import java.lang.ref.WeakReference
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 /**
  * **描述:** 权限申请的核心类。
@@ -20,7 +23,7 @@ import java.lang.ref.WeakReference
  *
  * **版本:** v 1.0.0
  */
-class OkPermission private constructor(private val weakActivity: WeakReference<Activity>) {
+class OkPermission private constructor(private val weakActivity: WeakReference<Context>) {
     class permission {
         companion object {
             const val NOTIFICATION = "kelin.permission.NOTIFICATION"
@@ -29,7 +32,20 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
 
     companion object {
 
-        private val BRAND = Build.MANUFACTURER.toLowerCase()
+        private val BRAND = Build.MANUFACTURER.toLowerCase(Locale.CHINA)
+        /**
+         * 创建OkPermission并依附于Activity。
+         *
+         * @param context 当前的Activity对象。
+         */
+        fun with(context: Context): OkPermission {
+            return if (context is Activity) {
+                with(context)
+            } else {
+                throw ClassCastException("The context must be Activity")
+            }
+        }
+
         /**
          * 创建OkPermission并依附于Activity。
          *
@@ -139,7 +155,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
     private var missingPermissionDialogInterceptor: ((renewable: Renewable) -> Unit)? = null
     private var settingIntentGeneratorInterceptor: ((permission: Permission) -> SettingIntentGenerator?)? = null
 
-    private val activity: Activity?
+    private val context: Context?
         get() = weakActivity.get()
 
 
@@ -157,7 +173,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
      * @see addForcePermissions
      */
     fun addWeakPermissions(vararg permissions: String): OkPermission {
-        val context = activity
+        val context = context
         if (context != null) {
             checkPermissionsRegistered(context, *permissions)
             needPermissions.addAll(permissions.map { Permission.createWeak(it, true) })
@@ -179,7 +195,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
      * @see addForcePermissions
      */
     fun addDefaultPermissions(vararg permissions: String): OkPermission {
-        val context = activity
+        val context = context
         if (context != null) {
             checkPermissionsRegistered(context, *permissions)
             needPermissions.addAll(permissions.map { Permission.createDefault(it, false) })
@@ -201,7 +217,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
      * @see addDefaultPermissions
      */
     fun addForcePermissions(vararg permissions: String): OkPermission {
-        val context = activity
+        val context = context
         if (context != null) {
             checkPermissionsRegistered(context, *permissions)
             needPermissions.addAll(permissions.map { Permission.createDefault(it, true) })
@@ -265,8 +281,8 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
      *
      * **第二个(Array<out String>)参数：** 该参数包含了所有的被拒绝了的权限，如果第一个参数的值为true的话该参数才会有值，否者将是一个空的数组。
      */
-    fun check():Array<out String> {
-        val activity = activity
+    fun check(): Array<out String> {
+        val activity = context
         return if (activity != null) {
             if (needPermissions.isEmpty()) {
                 needPermissions.addAll(getManifestPermissions(activity).map { Permission.createDefault(it, false) })
@@ -302,7 +318,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<A
     }
 
     private fun doOnApplyPermission(onApplyFinished: (granted: Boolean, permissions: Array<out String>) -> Unit) {
-        val activity = activity
+        val activity = context
         if (activity != null) {
             if (needPermissions.isEmpty()) {
                 needPermissions.addAll(getManifestPermissions(activity).map { Permission.createDefault(it, false) })

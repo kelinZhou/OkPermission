@@ -1,6 +1,5 @@
 package com.kelin.okpermission.router
 
-import android.app.Activity
 import com.kelin.okpermission.permission.Permission
 
 /**

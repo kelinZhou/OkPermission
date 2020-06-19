@@ -12,7 +12,7 @@ import com.kelin.okpermission.permission.Permission
  *
  * **版本:** v 1.0.0
  */
-class ApplicantManager(private var applicants: MutableCollection<PermissionsApplicant>) {
+internal class ApplicantManager(private var applicants: MutableCollection<PermissionsApplicant>) {
     private val appliedApplicant: MutableList<PermissionsApplicant> = ArrayList(applicants.size)
 
     fun startApply(listener: (granted: Boolean, permissions: Array<out String>) -> Unit) {
