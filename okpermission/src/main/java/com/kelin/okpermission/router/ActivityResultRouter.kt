@@ -1,6 +1,7 @@
 package com.kelin.okpermission.router
 
 import android.content.Intent
+import android.os.Bundle
 
 /**
  * **描述:** startActivityForResult的路由。
@@ -13,5 +14,5 @@ import android.content.Intent
  */
 interface ActivityResultRouter {
 
-    fun startActivityForResult(intent: Intent, onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit)
+    fun startActivityForResult(intent: Intent, options:Bundle? = null, onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit)
 }

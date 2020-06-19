@@ -183,7 +183,7 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
         finished: () -> Unit
     ) {
         if (isContinue) {
-            OkActivityResult.instance.startActivityForResult(
+            OkActivityResult.startActivityOrException(
                 activity,
                 intentGenerator.generatorIntent(activity)
             ) { _, _, e ->
@@ -193,7 +193,7 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
                         finished
                     )
                 } else {
-                    OkActivityResult.instance.startActivityForResult(
+                    OkActivityResult.startActivityOrException(
                         activity,
                         AppDetailIntentGenerator(null).generatorIntent(activity)
                     ) { _, _, exception ->

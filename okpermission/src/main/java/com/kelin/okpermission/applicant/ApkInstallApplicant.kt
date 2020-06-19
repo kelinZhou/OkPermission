@@ -34,7 +34,7 @@ class ApkInstallApplicant(context: Activity) : PermissionsApplicant(context) {
         onResult: (permissions: Array<out Permission>) -> Unit
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            OkActivityResult.instance.startActivityForResult(
+            OkActivityResult.startActivityOrException(
                 activity,
                 intentGenerator.generatorIntent(activity)
             ) { _, _ , e->

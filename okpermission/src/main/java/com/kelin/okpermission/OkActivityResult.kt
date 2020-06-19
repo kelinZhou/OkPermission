@@ -1,13 +1,17 @@
 package com.kelin.okpermission
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.support.v4.app.FragmentActivity
 import android.util.SparseArray
 import com.kelin.okpermission.router.ActivityResultRouter
 import com.kelin.okpermission.router.BasicRouter
 import com.kelin.okpermission.router.SupportBasicRouter
+import java.io.Serializable
 
 /**
  * **描述:** startActivityForResult的帮助工具。。
@@ -18,28 +22,287 @@ import com.kelin.okpermission.router.SupportBasicRouter
  *
  * **版本:** v 1.0.0
  */
-class OkActivityResult private constructor() {
+object OkActivityResult {
 
-    companion object {
-        private const val ROUTER_TAG = "ok_permission_activity_result_router_tag"
+    private const val ROUTER_TAG = "ok_permission_activity_result_router_tag"
+    private const val KEY_RESULT_DATA = "ok_permission_activity_result_data"
 
-        val instance: OkActivityResult by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { OkActivityResult() }
-    }
-
-    fun startActivityForResult(
+    fun startActivity(
         context: Activity,
         clazz: Class<out Activity>,
-        onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit
+        options: Bundle? = null,
+        onResult: (resultCode: Int, data: Intent) -> Unit
     ) {
-        startActivityForResult(context, Intent(context, clazz), onResult)
+        startActivity(context, Intent(context, clazz), options, onResult)
     }
 
-    fun startActivityForResult(
+    fun startActivity(
         context: Activity,
         intent: Intent,
+        options: Bundle? = null,
+        onResult: (resultCode: Int, data: Intent) -> Unit
+    ) {
+        getRouter(context).startActivityForResult(intent, options) { resultCode, data, e ->
+            if (e == null) {
+                onResult(resultCode, data)
+            } else {
+                throw ActivityNotFoundException("The activity not fount! \n${e.message}")
+            }
+        }
+    }
+
+    fun startActivityOrException(
+        context: Activity,
+        clazz: Class<out Activity>,
+        options: Bundle? = null,
         onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit
     ) {
-        getRouter(context).startActivityForResult(intent, onResult)
+        startActivityOrException(context, Intent(context, clazz), options, onResult)
+    }
+
+    fun startActivityOrException(
+        context: Activity,
+        intent: Intent,
+        options: Bundle? = null,
+        onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit
+    ) {
+        getRouter(context).startActivityForResult(intent, options, onResult)
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <D> getResultData(intent: Intent): D? {
+        val d = intent.extras?.get(KEY_RESULT_DATA)
+        return d as? D
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: Boolean = true, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: BooleanArray, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: Byte, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: ByteArray, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: Char, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: CharArray, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: Short, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: ShortArray, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: Int, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: IntArray, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: Long, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: LongArray?, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: Float, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: FloatArray, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: Double, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: DoubleArray, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: String, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: Array<out String>, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: CharSequence, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: Array<out CharSequence>, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: Parcelable, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: Array<out Parcelable>, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
+    }
+
+    @JvmOverloads
+    fun setResultData(activity: Activity, data: Serializable?, finish: Boolean = true) {
+        activity.setResult(Activity.RESULT_OK, Intent().apply {
+            putExtra(KEY_RESULT_DATA, data)
+        })
+        if (finish) {
+            activity.finish()
+        }
     }
 
     private fun getRouter(activity: Activity): ActivityResultRouter {
@@ -83,13 +346,14 @@ class OkActivityResult private constructor() {
             retainInstance = true
         }
 
-        override fun startActivityForResult(
-            intent: Intent,
-            onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit
-        ) {
+        override fun startActivityForResult(intent: Intent, options: Bundle?, onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit) {
             try {
-                val requestCode = makeRequestCode()
-                startActivityForResult(intent, requestCode)
+                val requestCode = generateRequestCode()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                    startActivityForResult(intent, requestCode, options)
+                } else {
+                    startActivityForResult(intent, requestCode)
+                }
                 resultCallbackCache.put(requestCode, onResult)
             } catch (e: Exception) {
                 onResult(Activity.RESULT_CANCELED, emptyIntent, e)
@@ -110,12 +374,12 @@ class OkActivityResult private constructor() {
         /**
          * 生成一个code。
          */
-        private fun makeRequestCode(): Int {
+        private fun generateRequestCode(): Int {
             val code = randomGenerator.nextInt(0, 0x0001_0000)
             return if (resultCallbackCache.indexOfKey(code) < 0) {
                 code
             } else {
-                makeRequestCode()
+                generateRequestCode()
             }
         }
     }
@@ -129,13 +393,10 @@ class OkActivityResult private constructor() {
             retainInstance = true
         }
 
-        override fun startActivityForResult(
-            intent: Intent,
-            onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit
-        ) {
+        override fun startActivityForResult(intent: Intent, options: Bundle?, onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit) {
             try {
-                val requestCode = makeRequestCode()
-                startActivityForResult(intent, requestCode)
+                val requestCode = generateRequestCode()
+                startActivityForResult(intent, requestCode, options)
                 resultCallbackCache.put(requestCode, onResult)
             } catch (e: Exception) {
                 onResult(Activity.RESULT_CANCELED, emptyIntent, e)
@@ -156,12 +417,12 @@ class OkActivityResult private constructor() {
         /**
          * 生成一个code。
          */
-        private fun makeRequestCode(): Int {
+        private fun generateRequestCode(): Int {
             val code = randomGenerator.nextInt(0, 0x0001_0000)
             return if (resultCallbackCache.indexOfKey(code) < 0) {
                 code
             } else {
-                makeRequestCode()
+                generateRequestCode()
             }
         }
     }

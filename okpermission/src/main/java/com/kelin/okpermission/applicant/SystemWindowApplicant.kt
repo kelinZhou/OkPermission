@@ -68,7 +68,7 @@ class SystemWindowApplicant(activity: Activity) : PermissionsApplicant(activity)
         permissions: Array<out Permission>,
         onResult: (permissions: Array<out Permission>) -> Unit
     ) {
-        OkActivityResult.instance.startActivityForResult(
+        OkActivityResult.startActivityOrException(
             activity,
             intentGenerator.generatorIntent(activity)
         ) { _, _, e ->
