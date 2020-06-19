@@ -11,6 +11,28 @@
 
 ![DemoApk](materials/demo_download.png)
 
+## 更新
+#### 3.0.4
+    1.为with方法增加一个参数为Context的重载，将是否为Activity的判断进行内聚。
+    2.OkActivityResult启动Activity时支持options参数，且无需做版本判断。
+    3.OkActivityResult增加一系列setResult方法以及getResultData方法，使其更加易用。
+    4.启动Activity后的回调函数中默认不再有Exception，并将方法名更改为"startActivity"和“startActivityOrException”。
+#### 3.0.3
+    修复8.0以下申请通知权限时如果设置了Channel的话会导致多次打开通知权限设置页面的bug。
+#### 3.0.2
+    优化通知权限的申请，将检查权限由回调的方式改为返回的方式。
+#### 3.0.1
+    对外暴露检测权限的接口。
+#### 3.0.0
+    适配悬浮窗权限、通知权限，框架重构，扩展性强。
+#### 2.0.4
+    适配Android8.0的Apk安装权限。
+#### 2.0.2
+    增加自定义弹窗的接口，支持自定义弹窗。
+#### 2.0.1
+    优化权限申请流程。
+
+
 ## 下载
 ###### 第一步：添加 JitPack 仓库到你项目根目录的 gradle 文件中。
 ```groovy
