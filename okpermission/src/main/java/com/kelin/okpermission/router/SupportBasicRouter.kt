@@ -1,6 +1,5 @@
 package com.kelin.okpermission.router
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import kotlin.random.Random
