@@ -6,11 +6,10 @@ import android.content.Context
 import android.os.Binder
 import android.os.Build
 import android.provider.Settings
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import com.kelin.okpermission.OkActivityResult
 import com.kelin.okpermission.permission.Permission
 import com.kelin.okpermission.router.PermissionRequestRouter
-import java.lang.reflect.Method
 
 /**
  * **描述:** 系统悬浮窗权限的申请器。
@@ -68,10 +67,10 @@ class SystemWindowApplicant(activity: Activity) : PermissionsApplicant(activity)
         permissions: Array<out Permission>,
         onResult: (permissions: Array<out Permission>) -> Unit
     ) {
-        OkActivityResult.startActivityOrException(
+        OkActivityResult.startActivity(
             activity,
             intentGenerator.generatorIntent(activity)
-        ) { _, _, e ->
+        ) {
             if (checkSystemPermission()) {
                 onResult(emptyArray())
             } else {

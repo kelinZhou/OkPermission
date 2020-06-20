@@ -37,7 +37,7 @@ class ApkInstallApplicant(context: Activity) : PermissionsApplicant(context) {
             OkActivityResult.startActivityOrException(
                 activity,
                 intentGenerator.generatorIntent(activity)
-            ) { _, _ , e->
+            ) { _, e ->
                 if (e == null && activity.packageManager.canRequestPackageInstalls()) {
                     onResult(emptyArray())
                 } else {

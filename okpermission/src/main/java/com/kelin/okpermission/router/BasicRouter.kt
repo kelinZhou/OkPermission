@@ -16,8 +16,6 @@ import kotlin.random.Random
  */
 abstract class BasicRouter : Fragment() {
 
-    protected val emptyIntent :Intent by lazy { Intent() }
-
     protected val randomGenerator = Random(System.currentTimeMillis())
 
     override fun onCreate(savedInstanceState: Bundle?) {

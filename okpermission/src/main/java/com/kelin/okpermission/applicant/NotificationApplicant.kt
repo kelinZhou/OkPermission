@@ -4,7 +4,7 @@ import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
-import android.support.v4.app.NotificationManagerCompat
+import androidx.core.app.NotificationManagerCompat
 import com.kelin.okpermission.OkActivityResult
 import com.kelin.okpermission.permission.Permission
 import com.kelin.okpermission.router.PermissionRequestRouter
@@ -58,7 +58,7 @@ class NotificationApplicant(activity: Activity) : PermissionsApplicant(activity)
             OkActivityResult.startActivityOrException(
                 activity,
                 intentGenerator.generatorIntent(activity)
-            ) { _, _, e ->
+            ) { _, e ->
                 if (e == null) {
                     if (areNotificationsEnabled()) { //如果总开关开了就接着判断渠道
                         onRequestChannels(permissions, router, onResult)
@@ -93,7 +93,7 @@ class NotificationApplicant(activity: Activity) : PermissionsApplicant(activity)
                 OkActivityResult.startActivityOrException(
                     activity,
                     intentGenerator.generatorIntent(activity)
-                ) { _, _, e ->
+                ) { _, e ->
                     if (e == null) {
                         if (areNotificationsEnabled()) { //既然没有渠道就判断总开关就好了。
                             onResult(emptyArray())
@@ -124,7 +124,7 @@ class NotificationApplicant(activity: Activity) : PermissionsApplicant(activity)
                 activity,
                 curPermission
             )
-        ) { _, _, e ->
+        ) { _, e ->
             if (e == null) {
                 if (!isNotificationChannelEnabled(curPermission.channel)) {
                     deniedPermissions.add(curPermission)
@@ -147,7 +147,7 @@ class NotificationApplicant(activity: Activity) : PermissionsApplicant(activity)
         OkActivityResult.startActivityOrException(
             activity,
             intentGenerator.generatorAppDetailIntent(activity)
-        ) { _, _, exception ->
+        ) { _, exception ->
             if (exception == null) {
                 if (NotificationManagerCompat.from(activity).areNotificationsEnabled()) {
                     onResult(emptyArray())

@@ -6,8 +6,8 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
-import android.support.v4.app.FragmentActivity
 import android.util.SparseArray
+import androidx.fragment.app.FragmentActivity
 import com.kelin.okpermission.router.ActivityResultRouter
 import com.kelin.okpermission.router.BasicRouter
 import com.kelin.okpermission.router.SupportBasicRouter
@@ -25,24 +25,24 @@ import java.io.Serializable
 object OkActivityResult {
 
     private const val ROUTER_TAG = "ok_permission_activity_result_router_tag"
-    private const val KEY_RESULT_DATA = "ok_permission_activity_result_data"
+    const val KEY_RESULT_DATA = "ok_permission_activity_result_data"
 
-    fun startActivity(
-        context: Activity,
+    fun <D> startActivity(
+        activity: Activity,
         clazz: Class<out Activity>,
         options: Bundle? = null,
-        onResult: (resultCode: Int, data: Intent) -> Unit
+        onResult: (resultCode: Int, data: D?) -> Unit
     ) {
-        startActivity(context, Intent(context, clazz), options, onResult)
+        startActivity(activity, Intent(activity, clazz), options, onResult)
     }
 
-    fun startActivity(
-        context: Activity,
+    fun <D> startActivity(
+        activity: Activity,
         intent: Intent,
         options: Bundle? = null,
-        onResult: (resultCode: Int, data: Intent) -> Unit
+        onResult: (resultCode: Int, data: D?) -> Unit
     ) {
-        getRouter(context).startActivityForResult(intent, options) { resultCode, data, e ->
+        startActivityOrException<D>(activity, intent, options) { resultCode, data, e ->
             if (e == null) {
                 onResult(resultCode, data)
             } else {
@@ -51,22 +51,66 @@ object OkActivityResult {
         }
     }
 
-    fun startActivityOrException(
-        context: Activity,
+    fun startActivity(
+        activity: Activity,
         clazz: Class<out Activity>,
         options: Bundle? = null,
-        onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit
+        onResult: (resultCode: Int) -> Unit
     ) {
-        startActivityOrException(context, Intent(context, clazz), options, onResult)
+        startActivity(activity, Intent(activity, clazz), options, onResult)
+    }
+
+    fun startActivity(
+        activity: Activity,
+        intent: Intent,
+        options: Bundle? = null,
+        onResult: (resultCode: Int) -> Unit
+    ) {
+        startActivityOrException<Any>(activity, intent, options) { resultCode, _, e ->
+            if (e == null) {
+                onResult(resultCode)
+            } else {
+                throw ActivityNotFoundException("The activity not fount! \n${e.message}")
+            }
+        }
+    }
+
+    fun <D> startActivityOrException(
+        activity: Activity,
+        clazz: Class<out Activity>,
+        options: Bundle? = null,
+        onResult: (resultCode: Int, data: D?, e: Exception?) -> Unit
+    ) {
+        startActivityOrException(activity, Intent(activity, clazz), options, onResult)
+    }
+
+    fun <D> startActivityOrException(
+        context: Activity,
+        intent: Intent,
+        options: Bundle? = null,
+        onResult: (resultCode: Int, data: D?, e: Exception?) -> Unit
+    ) {
+        getRouter<D>(context).startActivityForResult(intent, options, onResult)
+    }
+
+    fun startActivityOrException(
+        activity: Activity,
+        clazz: Class<out Activity>,
+        options: Bundle? = null,
+        onResult: (resultCode: Int, e: Exception?) -> Unit
+    ) {
+        startActivityOrException(activity, Intent(activity, clazz), options, onResult)
     }
 
     fun startActivityOrException(
         context: Activity,
         intent: Intent,
         options: Bundle? = null,
-        onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit
+        onResult: (resultCode: Int, e: Exception?) -> Unit
     ) {
-        getRouter(context).startActivityForResult(intent, options, onResult)
+        getRouter<Any>(context).startActivityForResult(intent, options) { resultCode, data, e ->
+            onResult(resultCode, e)
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -305,12 +349,12 @@ object OkActivityResult {
         }
     }
 
-    private fun getRouter(activity: Activity): ActivityResultRouter {
+    private fun <D> getRouter(activity: Activity): ActivityResultRouter<D> {
         return findRouter(activity) ?: createRouter(activity)
     }
 
-    private fun createRouter(activity: Activity): ActivityResultRouter {
-        val router: ActivityResultRouter
+    private fun <D> createRouter(activity: Activity): ActivityResultRouter<D> {
+        val router: ActivityResultRouter<D>
         if (activity is FragmentActivity) {
             router = SupportActivityResultRouterImpl()
             val fm = activity.supportFragmentManager
@@ -329,24 +373,33 @@ object OkActivityResult {
         return router
     }
 
-    private fun findRouter(activity: Activity): ActivityResultRouter? {
+    @Suppress("UNCHECKED_CAST", "DEPRECATION")
+    private fun <D> findRouter(activity: Activity): ActivityResultRouter<D>? {
         return if (activity is FragmentActivity) {
-            activity.supportFragmentManager.findFragmentByTag(ROUTER_TAG) as? ActivityResultRouter
+            try {
+                activity.supportFragmentManager.findFragmentByTag(ROUTER_TAG) as? ActivityResultRouter<D>
+            } catch (e: Exception) {
+                null
+            }
         } else {
-            activity.fragmentManager.findFragmentByTag(ROUTER_TAG) as? ActivityResultRouter
+            try {
+                activity.fragmentManager.findFragmentByTag(ROUTER_TAG) as? ActivityResultRouter<D>
+            } catch (e: Exception) {
+                null
+            }
         }
     }
 
-    internal class ActivityResultRouterImpl : BasicRouter(), ActivityResultRouter {
+    internal class ActivityResultRouterImpl<D> : BasicRouter(), ActivityResultRouter<D> {
 
-        private val resultCallbackCache = SparseArray<(resultCode: Int, data: Intent, e: Exception?) -> Unit>()
+        private val resultCallbackCache = SparseArray<(resultCode: Int, data: D?, e: Exception?) -> Unit>()
 
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             retainInstance = true
         }
 
-        override fun startActivityForResult(intent: Intent, options: Bundle?, onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit) {
+        override fun startActivityForResult(intent: Intent, options: Bundle?, onResult: (resultCode: Int, data: D?, e: Exception?) -> Unit) {
             try {
                 val requestCode = generateRequestCode()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
@@ -356,14 +409,14 @@ object OkActivityResult {
                 }
                 resultCallbackCache.put(requestCode, onResult)
             } catch (e: Exception) {
-                onResult(Activity.RESULT_CANCELED, emptyIntent, e)
+                onResult(Activity.RESULT_CANCELED, null, e)
             }
         }
 
         override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
             val callback = resultCallbackCache[requestCode]
             resultCallbackCache.remove(requestCode)
-            callback?.invoke(resultCode, data ?: emptyIntent, null)
+            callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
         }
 
         override fun onDestroy() {
@@ -384,29 +437,29 @@ object OkActivityResult {
         }
     }
 
-    internal class SupportActivityResultRouterImpl : SupportBasicRouter(), ActivityResultRouter {
+    internal class SupportActivityResultRouterImpl<D> : SupportBasicRouter(), ActivityResultRouter<D> {
 
-        private val resultCallbackCache = SparseArray<(resultCode: Int, data: Intent, e: Exception?) -> Unit>()
+        private val resultCallbackCache = SparseArray<(resultCode: Int, data: D?, e: Exception?) -> Unit>()
 
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             retainInstance = true
         }
 
-        override fun startActivityForResult(intent: Intent, options: Bundle?, onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit) {
+        override fun startActivityForResult(intent: Intent, options: Bundle?, onResult: (resultCode: Int, data: D?, e: Exception?) -> Unit) {
             try {
                 val requestCode = generateRequestCode()
                 startActivityForResult(intent, requestCode, options)
                 resultCallbackCache.put(requestCode, onResult)
             } catch (e: Exception) {
-                onResult(Activity.RESULT_CANCELED, emptyIntent, e)
+                onResult(Activity.RESULT_CANCELED, null, e)
             }
         }
 
         override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
             val callback = resultCallbackCache[requestCode]
             resultCallbackCache.remove(requestCode)
-            callback?.invoke(resultCode, data ?: emptyIntent, null)
+            callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
         }
 
         override fun onDestroy() {

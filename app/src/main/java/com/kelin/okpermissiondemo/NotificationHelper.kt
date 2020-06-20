@@ -7,11 +7,10 @@ import android.content.ContextWrapper
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Build
-import android.support.v4.app.NotificationCompat
-
+import androidx.core.app.NotificationCompat
 import android.app.Notification.PRIORITY_DEFAULT
 import android.app.Notification.VISIBILITY_SECRET
-import android.support.annotation.StringRes
+import androidx.annotation.StringRes
 
 /**
  * **描述:** 系统通知工具。

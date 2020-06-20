@@ -1,16 +1,14 @@
 package com.kelin.okpermission.applicant.intentgenerator
 
 import android.Manifest
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import android.support.annotation.RequiresApi
-import android.support.v4.app.NotificationManagerCompat
-import android.util.Log
+import androidx.annotation.RequiresApi
+import androidx.core.app.NotificationManagerCompat
 import com.kelin.okpermission.OkPermission
 import com.kelin.okpermission.permission.Permission
 import java.io.BufferedReader

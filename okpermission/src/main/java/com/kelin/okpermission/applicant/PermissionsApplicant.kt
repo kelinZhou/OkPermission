@@ -5,9 +5,9 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.support.v4.app.FragmentActivity
-import android.support.v7.app.AlertDialog
 import android.util.SparseArray
+import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.FragmentActivity
 import com.kelin.okpermission.OkActivityResult
 import com.kelin.okpermission.Renewable
 import com.kelin.okpermission.applicant.intentgenerator.AppDetailIntentGenerator
@@ -186,7 +186,7 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
             OkActivityResult.startActivityOrException(
                 activity,
                 intentGenerator.generatorIntent(activity)
-            ) { _, _, e ->
+            ) { _, e ->
                 if (e == null) {
                     applyPermissionAgain(
                         filterWeak(deniedPermissions),
@@ -196,7 +196,7 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
                     OkActivityResult.startActivityOrException(
                         activity,
                         AppDetailIntentGenerator(null).generatorIntent(activity)
-                    ) { _, _, exception ->
+                    ) { _, exception ->
                         if (exception == null) {
                             applyPermissionAgain(
                                 filterWeak(deniedPermissions),

@@ -12,7 +12,7 @@ import android.os.Bundle
  *
  * **版本:** v 1.0.0
  */
-interface ActivityResultRouter {
+interface ActivityResultRouter<D> {
 
-    fun startActivityForResult(intent: Intent, options:Bundle? = null, onResult: (resultCode: Int, data: Intent, e: Exception?) -> Unit)
+    fun startActivityForResult(intent: Intent, options:Bundle? = null, onResult: (resultCode: Int, data: D?, e: Exception?) -> Unit)
 }

@@ -2,7 +2,7 @@ package com.kelin.okpermission.applicant
 
 import android.app.Activity
 import android.content.pm.PackageManager
-import android.support.v4.content.ContextCompat
+import androidx.core.content.ContextCompat
 import com.kelin.okpermission.permission.Permission
 import com.kelin.okpermission.router.PermissionRequestRouter
 

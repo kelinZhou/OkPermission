@@ -5,7 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import com.kelin.okpermission.applicant.*
 import com.kelin.okpermission.applicant.intentgenerator.*
 import com.kelin.okpermission.permission.Permission
