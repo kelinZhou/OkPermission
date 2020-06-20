@@ -12,6 +12,10 @@
 ![DemoApk](materials/demo_download.png)
 
 ## 更新
+#### 3.1.0
+    1.从3.1.0开始，全面迁移至Androidx，如果您的项目还没有迁移至Androidx请使用3.0.4或之前的版本。 
+    2.更加好用的OkActivityResult,result回调不再返回Intent，而是直接返回通过泛型指定数据类型。您需要在要返回结果的页面调用OkActivityResult.setResultData(activity, data)方法为调起页面返回数据(推荐)，或则使用OkActivityResult.KEY_RESULT_DATA作为键为Intent塞值。
+    3.为OkActivityResult的startActivity方法和startActivityOrException方法分别增加不需要携带数据的回调重载(如果你只需要关心ResultCode不需要带回任何数据可以使用，这样你就无需指定泛型，简化代码书写)。
 #### 3.0.4
     1.为with方法增加一个参数为Context的重载，将是否为Activity的判断进行内聚。
     2.OkActivityResult启动Activity时支持options参数，且无需做版本判断。
