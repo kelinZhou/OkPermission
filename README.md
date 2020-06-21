@@ -196,5 +196,49 @@ OkPermission.with(this)
             }
         }
 ```
+
+## OkActivityResult
+为了监听某个权限设置页面用户操作后(执行onActivityResult方法时)重新校验权限是否已经开启，所以内部封装了一个具有完善的功能的处理onActivityResult组件，
+核心类为OkActivityResult。使用该组件可以通过回调的方式接受到onActivityResult的数据，并且可以直接通过泛型指定数据类型，避免类型强转。
+
+####使用方法
+当你需要调起某个目标页面而不需要向目标页面传递任何数据且不需要从目标页面获取数据时。
+```kotlin
+OkActivityResult.startActivity(this, MainActivity::class.java) { resultCode ->
+    if (resultCode == Activity.RESULT_OK) {
+        //Do something……
+    }
+}
+```
+当你需要调起某个目标页面而不需要向目标页面传递任何数据但需要从目标页面获取数据时。
+```kotlin
+OkActivityResult.startActivity<Person>(this, PersonSelectorActivity::class.java) { resultCode, person ->
+    if (person != null) {
+        //Do something……
+    }
+}
+```
+如果你需要向目标页面传递一些数据你只需要将```kotlin XXXActivity::class.java```替换成Intent即可。
+```kotlin
+val intent = Intent(this, PersonSelectorActivit::class.java)
+intent.putExtra("age", 18)
+OkActivityResult.startActivity(this, intent) { resultCode, person ->
+    if (person != null) {
+        //Do something……
+    }
+}
+```
+如果你不确定你要调起的某个页面是否存在，当不存在时你需要自己处理异常时，你需要调用```kotlin startActivityOrException```方法。
+```kotlin
+OkActivityResult.startActivityOrException(this, Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}"))) { resultCode, e ->
+    if (e != null) {
+        // Handle Activity not found. 
+    }else{
+        //Do something……
+    }
+}
+```
+**补充**你需要在目标页面中调用```kotlin OkActivityResult.setResultData(activity, person)```方法才能在发起页面获取到数据。
+
 * * *
 **如果你觉得该库对你有用，欢迎给和Star。如果你有新的适配代码也感谢提供(提交Issues或发邮件给我都行)。感谢！！！**
