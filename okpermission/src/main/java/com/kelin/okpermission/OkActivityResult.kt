@@ -12,6 +12,7 @@ import com.kelin.okpermission.router.ActivityResultRouter
 import com.kelin.okpermission.router.BasicRouter
 import com.kelin.okpermission.router.SupportBasicRouter
 import java.io.Serializable
+import java.lang.ClassCastException
 
 /**
  * **描述:** startActivityForResult的帮助工具。。
@@ -66,7 +67,7 @@ object OkActivityResult {
         options: Bundle? = null,
         onResult: (resultCode: Int) -> Unit
     ) {
-        startActivityOrException<Any>(activity, intent, options) { resultCode, _, e ->
+        startActivityOrException<Long>(activity, intent, options) { resultCode, d, e ->
             if (e == null) {
                 onResult(resultCode)
             } else {
@@ -115,8 +116,7 @@ object OkActivityResult {
 
     @Suppress("UNCHECKED_CAST")
     private fun <D> getResultData(intent: Intent): D? {
-        val d = intent.extras?.get(KEY_RESULT_DATA)
-        return d as? D
+        return intent.extras?.get(KEY_RESULT_DATA).let { (it as? D)?: intent as? D }
     }
 
     @JvmOverloads
@@ -416,7 +416,11 @@ object OkActivityResult {
         override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
             val callback = resultCallbackCache[requestCode]
             resultCallbackCache.remove(requestCode)
-            callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
+            try {
+                callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
+            }catch (e: ClassCastException){
+                callback?.invoke(resultCode, null, null)
+            }
         }
 
         override fun onDestroy() {
@@ -459,7 +463,11 @@ object OkActivityResult {
         override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
             val callback = resultCallbackCache[requestCode]
             resultCallbackCache.remove(requestCode)
-            callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
+            try {
+                callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
+            }catch (e: ClassCastException){
+                callback?.invoke(resultCode, null, null)
+            }
         }
 
         override fun onDestroy() {
