@@ -12,6 +12,17 @@
 ![DemoApk](materials/demo_download.png)
 
 ## 更新
+#### 3.1.1 OkActivityResult启动页面后支持直接获取Intent。
+  由于在某些场景下我们要启动的页面并不是我们自己的页面，而是系统页面或者是第三方应用的页面，而这种情况下我们只能且必须得到Intent。
+  此时我们只需要将泛型设置为Intent即可，栗子：
+```kotlin
+OkActivityResult.startActivity<Intent>(activity, Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)){ resultCode, data ->
+    if (resultCode == Activity.RESULT_OK && data != null) {
+        val pictureUri = data.data
+        //do something use the pictureUri.
+    }
+}
+```
 #### 3.1.0 迁移至Androidx并优化代码增加易用性。
 1.从3.1.0开始，全面迁移至Androidx，如果您的项目还没有迁移至Androidx请使用3.0.4或之前的版本。 
 
@@ -58,7 +69,7 @@ allprojects {
 ###### 第二步：添加这个依赖。
 ```groovy
 dependencies {
-    implementation 'com.github.kelinZhou:OkPermission:3.0.4'
+    implementation 'com.github.kelinZhou:OkPermission:${Last Version Here!}'
 }
 ```
 ## 使用
