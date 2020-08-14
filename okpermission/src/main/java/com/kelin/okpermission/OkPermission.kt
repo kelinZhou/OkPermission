@@ -341,12 +341,22 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
      *
      * 注意：如果没有通过```add***Permissions```方法添加权限的话会检测清单文件中注册了的所有权限。
      *
-     * @param onApplyFinished 回调函数。
+     * @return 返回Boolean,是告诉你用户是否同意了你本次的权限请求，如果为true则表示用户已经同意，否则则表示用于没有同意或没有全部同
+     * 意(如果你本次请求的是多个权限的话)，这里所说的全部只是指必要权限，即通过```addForcePermissions```方法添加的权限。其实你可以
+     * 这么理解，如果你本次申请权限调用了```addForcePermissions```方法添加了一些权限，那么如果这些权限中任何一个权限被拒绝则改参数的
+     * 值则为false，否则即为true。如果你没有调用```addForcePermissions```方法那个只有所申请的全部权限都被赋予改参数才会为true，
+     * 否者即为false。
+     */
+    fun isGranted(): Boolean {
+        return check().isEmpty()
+    }
+
+    /**
+     * 检查权限是否已经被授权，你需要将你需要的检查权限通过```add***Permissions```方法添加进来，然后调用该方法即可。
      *
-     * **第一个(Boolean)参数：** 回调方法中有两个参数，通常情况下你只需要关心第一个(Boolean)参数即可，这个参数是告诉你用户是否已经授权了
-     * 你所检查的权限。如果为true则表示用户已经同意了所有权限，否则则表示用于没有同意或没有全部同意(如果你本次检查的是多个权限的话)，
+     * 注意：如果没有通过```add***Permissions```方法添加权限的话会检测清单文件中注册了的所有权限。
      *
-     * **第二个(Array<out String>)参数：** 该参数包含了所有的被拒绝了的权限，如果第一个参数的值为true的话该参数才会有值，否者将是一个空的数组。
+     * @return 返回所有未被授权的权限。
      */
     fun check(): Array<out String> {
         val activity = context

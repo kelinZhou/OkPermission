@@ -216,7 +216,7 @@ class MainActivity : AppCompatActivity() {
                 }
         }
         tv11.setOnClickListener {
-            if (OkPermission.with(this).addDefaultPermissions(OkPermission.permission.GPS).check().isEmpty()) {
+            if (OkPermission.with(this).addDefaultPermissions(OkPermission.permission.GPS).isGranted()) {
                 OkPermission.with(this)
                     .addDefaultPermissions(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
                     .checkAndApply { granted, permissions ->
