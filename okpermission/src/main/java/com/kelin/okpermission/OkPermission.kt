@@ -29,6 +29,40 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
         const val NOTIFICATION = "kelin.permission.NOTIFICATION"
     }
 
+    object permission_group {
+        /**
+         * 外部存储读写权限组。
+         */
+        val EXTERNAL_STORAGE by lazy {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            } else {
+                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }
+
+        /**
+         * 使用相机拍照的权限组。
+         */
+        val CAMERA_FOR_PICTURE by lazy {
+            arrayOf(*EXTERNAL_STORAGE, Manifest.permission.CAMERA)
+        }
+
+        /**
+         * 使用相机录像的权限组。
+         */
+        val CAMERA_FOR_VIDEO by lazy {
+            arrayOf(*CAMERA_FOR_PICTURE, Manifest.permission.RECORD_AUDIO)
+        }
+
+        /**
+         * 定位权限组，包括粗略(基站)定位和高精度(GPS)定位。
+         */
+        val ACCESS_LOCATION by lazy {
+            arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
+
     companion object {
 
         private val BRAND = Build.MANUFACTURER.toLowerCase(Locale.CHINA)
