@@ -9,4 +9,6 @@
           android:title="通知设置"/>
     <item android:id="@+id/menuGoToSystemWindow"
           android:title="悬浮窗权限设置"/>
+    <item android:id="@+id/menuGoToModifySettings"
+          android:title="系统设置权限设置"/>
 </menu>

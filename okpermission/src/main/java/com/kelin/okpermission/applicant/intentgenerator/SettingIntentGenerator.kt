@@ -35,6 +35,8 @@ abstract class SettingIntentGenerator(private val permission: Permission?) {
             onGeneratorNotificationIntent(context, target)
         } else if (p == Manifest.permission.REQUEST_INSTALL_PACKAGES && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             onGeneratorApkInstallIntent(context)
+        } else if (p == Manifest.permission.WRITE_SETTINGS && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            onGeneratorWriteSettingsIntent(context)
         } else {
             onGeneratorDangerousIntent(context)
         }
@@ -57,6 +59,11 @@ abstract class SettingIntentGenerator(private val permission: Permission?) {
     @RequiresApi(Build.VERSION_CODES.O)
     protected open fun onGeneratorApkInstallIntent(context: Context): Intent {
         return Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}"))
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    protected open fun onGeneratorWriteSettingsIntent(context: Context): Intent {
+        return Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:${context.packageName}"))
     }
 
     protected open fun onGeneratorNotificationIntent(

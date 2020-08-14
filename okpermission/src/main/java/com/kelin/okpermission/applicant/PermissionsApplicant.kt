@@ -41,8 +41,14 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
     internal val checkDeniedPermissions: List<Permission>
         get() = permissionList.filter { !checkSelfPermission(it) }
 
+    /**
+     * 检测是否已经拥有权限。
+     */
     protected abstract fun checkSelfPermission(permission: Permission): Boolean
 
+    /**
+     * 判断用户是否勾选了禁止后不再询问。
+     */
     protected abstract fun shouldShowRequestPermissionRationale(
         router: PermissionRequestRouter,
         permission: Permission

@@ -59,7 +59,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
          * 打开应用权限设置页面。由于这需要对各个品牌的手机进行适配，所以并不能保证一定能打开权限设置页面。
          * 如果无法打开应用权限设置页面，将会打开应用详情页面。
          *
-         * @param context 需要上下文。
+         * @param context 需要Activity的Context。
          */
         fun gotoPermissionSettingPage(context: Context) {
             val intentGenerator = createSettingIntentGenerator()
@@ -70,6 +70,10 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
             }
         }
 
+        /**
+         * 打开安装APK权限设置页面。
+         * @param context 需要Activity的Context。
+         */
         @RequiresApi(Build.VERSION_CODES.O)
         fun gotoInstallPermissionPage(context: Context) {
             context.startActivity(
@@ -79,6 +83,11 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
             )
         }
 
+        /**
+         * 打开通知权限设置页面。
+         * @param context 需要Activity的Context。
+         * @param channel 是否打开指定channel的设置页面，如果是该参数需要传指定的channel。
+         */
         fun gotoNotificationPermissionPage(context: Context, channel: String = "") {
             context.startActivity(
                 createSettingIntentGenerator(Permission.createNotification(channel))
@@ -86,9 +95,24 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
             )
         }
 
+        /**
+         * 打开悬浮窗权限设置页面。
+         * @param context 需要Activity的Context。
+         */
         fun gotoSystemWindowPermissionPage(context: Context) {
             context.startActivity(
                 createSettingIntentGenerator(Permission.createDefault(Manifest.permission.SYSTEM_ALERT_WINDOW))
+                    .generatorIntent(context)
+            )
+        }
+
+        /**
+         * 打开修改系统设置页面。
+         * @param context 需要Activity的Context。
+         */
+        fun gotoWriteSettingsPage(context: Context) {
+            context.startActivity(
+                createSettingIntentGenerator(Permission.createDefault(Manifest.permission.WRITE_SETTINGS))
                     .generatorIntent(context)
             )
         }
@@ -153,7 +177,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
     private var checkPermissionTypeInterceptor: MakeApplicantInterceptor? = null
 
     private var missingPermissionDialogInterceptor: ((renewable: Renewable) -> Unit)? = null
-    private var settingIntentGeneratorInterceptor: ((permission: Permission) -> SettingIntentGenerator?)? = null
+    private var settingsIntentGeneratorInterceptor: ((permission: Permission) -> SettingIntentGenerator?)? = null
 
     private val context: Context?
         get() = weakActivity.get()
@@ -304,8 +328,8 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
     /**
      * 拦截设置页面Intent生产器，由自己实现指定页面的跳转。该方法必须要在apply等相关申请权限的方法前调用。
      */
-    fun interceptSettingIntentGenerator(interceptor: (permission: Permission) -> SettingIntentGenerator?): OkPermission {
-        settingIntentGeneratorInterceptor = interceptor
+    fun interceptSettingsIntentGenerator(interceptor: (permission: Permission) -> SettingIntentGenerator?): OkPermission {
+        settingsIntentGeneratorInterceptor = interceptor
         return this
     }
 
@@ -343,6 +367,9 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
                     permission.NOTIFICATION -> {
                         NotificationApplicant::class.java
                     }
+                    Manifest.permission.WRITE_SETTINGS -> {
+                        WriteSettingsApplicant::class.java
+                    }
                     else -> {
                         DefaultApplicant::class.java
                     }
@@ -351,8 +378,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
             val a = applicants[applicantClass]
             if (a == null) {
                 val applicant = applicantClass.getConstructor(Activity::class.java).newInstance(context)
-                applicant.intentGenerator =
-                    settingIntentGeneratorInterceptor?.invoke(it) ?: createSettingIntentGenerator(it)
+                applicant.intentGenerator = settingsIntentGeneratorInterceptor?.invoke(it) ?: createSettingIntentGenerator(it)
                 applicant.addPermission(it)
                 applicant.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
                 applicants[applicantClass] = applicant

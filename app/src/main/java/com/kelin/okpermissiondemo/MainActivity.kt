@@ -41,6 +41,10 @@ class MainActivity : AppCompatActivity() {
                 OkPermission.gotoSystemWindowPermissionPage(this)
                 true
             }
+            R.id.menuGoToModifySettings -> {
+                OkPermission.gotoWriteSettingsPage(this)
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -194,6 +198,17 @@ class MainActivity : AppCompatActivity() {
                         Toast.makeText(this, "悬浮窗权限已开启", Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(this, "悬浮窗权限已禁用", Toast.LENGTH_SHORT).show()
+                    }
+                }
+        }
+        tv10.setOnClickListener {
+            OkPermission.with(this)
+                .addDefaultPermissions(Manifest.permission.WRITE_SETTINGS)
+                .checkAndApply { granted, permissions ->
+                    if (granted) {
+                        Toast.makeText(this, "系统设置权限已开启", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "系统设置权限已禁用", Toast.LENGTH_SHORT).show()
                     }
                 }
         }
