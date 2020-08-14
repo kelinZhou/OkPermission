@@ -13,6 +13,23 @@
 
 ## 更新
 
+#### 3.1.3 增加自定义GPS权限以后优化代码提高易用性。
+   1.增加自定义权限```OkPermission.permission.GPS```，用法和普通权限一样，支持检测是否已经授权，支持检测并申请(如果用户没有打开GPS开关则会引导用户去开启)。
+   
+   2.增加```isGranted():Boolean```方法，用于判断权限是否已经被授权,以及```checkAndApplyOnly()```方法用户只申请权限不关心结果。
+   
+   3.将经常需要在一起申请的权限进行编组，方便调用(后续会不断增加)。具体如下：
+   ```kotlin
+    //包含Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE两个权限。
+    OkPermission.permission_group.EXTERNAL_STORAGE
+    //包含OkPermission.permission_group.EXTERNAL_STORAGE权限组外加Manifest.permission.CAMERA权限。
+    OkPermission.permission_group.CAMERA_FOR_PICTURE
+    //包含OkPermission.permission_group.CAMERA_FOR_PICTURE权限组外加Manifest.permission.RECORD_AUDIO权限。
+    OkPermission.permission_group.CAMERA_FOR_VIDEO
+    //包含Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION两个权限。
+    OkPermission.permission_group.ACCESS_LOCATION
+```
+
 #### 3.1.2 适配修改系统设置权限。
    增加对```Manifest.permission.WRITE_SETTINGS```权限的适配
 
