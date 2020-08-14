@@ -37,6 +37,8 @@ abstract class SettingIntentGenerator(private val permission: Permission?) {
             onGeneratorApkInstallIntent(context)
         } else if (p == Manifest.permission.WRITE_SETTINGS && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             onGeneratorWriteSettingsIntent(context)
+        } else if (p == OkPermission.permission.GPS){
+            onGeneratorGPSIntent(context)
         } else {
             onGeneratorDangerousIntent(context)
         }
@@ -64,6 +66,10 @@ abstract class SettingIntentGenerator(private val permission: Permission?) {
     @RequiresApi(Build.VERSION_CODES.M)
     protected open fun onGeneratorWriteSettingsIntent(context: Context): Intent {
         return Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:${context.packageName}"))
+    }
+
+    protected open fun onGeneratorGPSIntent(context: Context): Intent {
+        return Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
     }
 
     protected open fun onGeneratorNotificationIntent(

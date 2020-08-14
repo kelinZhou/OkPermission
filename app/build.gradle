@@ -10,8 +10,8 @@ android {
         applicationId "com.kelin.okpermissiondemo"
         minSdkVersion 14
         targetSdkVersion 28
-        versionCode 303
-        versionName "3.0.3"
+        versionCode 312
+        versionName "3.1.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {

@@ -11,4 +11,6 @@
           android:title="悬浮窗权限设置"/>
     <item android:id="@+id/menuGoToModifySettings"
           android:title="系统设置权限设置"/>
+    <item android:id="@+id/menuGoToGPSSettings"
+          android:title="系统定位开关设置"/>
 </menu>

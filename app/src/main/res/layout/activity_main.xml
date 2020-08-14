@@ -13,7 +13,7 @@
             android:layout_height="wrap_content"
             app:layout_constraintVertical_chainStyle="packed"
             app:layout_constraintVertical_bias="0.15"
-            android:text="弱申请权限"
+            android:text="申请清单文件中的所有权限"
             android:padding="10dp"
             app:layout_constraintBottom_toTopOf="@id/tv1"
             app:layout_constraintLeft_toLeftOf="parent"

@@ -45,6 +45,10 @@ class MainActivity : AppCompatActivity() {
                 OkPermission.gotoWriteSettingsPage(this)
                 true
             }
+            R.id.menuGoToGPSSettings -> {
+                OkPermission.gotoGPSSettingsPage(this)
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -55,7 +59,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         tv0.setOnClickListener {
             OkPermission.with(this)
-                .addWeakPermissions(Manifest.permission.READ_PHONE_STATE)
                 .checkAndApply { granted, permissions ->
                     if (granted) {
                         Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
@@ -213,15 +216,30 @@ class MainActivity : AppCompatActivity() {
                 }
         }
         tv11.setOnClickListener {
-            OkPermission.with(this)
-                .addDefaultPermissions(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
-                .checkAndApply { granted, permissions ->
-                    if (granted) {
-                        Toast.makeText(this, "定位权限已开启", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(this, "定位权限已禁用", Toast.LENGTH_SHORT).show()
+            if (OkPermission.with(this).addDefaultPermissions(OkPermission.permission.GPS).check().isEmpty()) {
+                OkPermission.with(this)
+                    .addDefaultPermissions(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
+                    .checkAndApply { granted, permissions ->
+                        if (granted) {
+                            Toast.makeText(this, "定位权限已开启", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(this, "定位权限已禁用", Toast.LENGTH_SHORT).show()
+                        }
                     }
-                }
+            } else {
+                AlertDialog.Builder(this)
+                    .setTitle("提示：")
+                    .setMessage("需要打开系统定位开关，用于定位服务。")
+                    .setNegativeButton("暂不开启"){ dialog, which ->
+                        dialog.dismiss()
+                    }
+                    .setPositiveButton("去设置"){dialog, which ->
+                        dialog.dismiss()
+                        OkPermission.with(this)
+                            .addDefaultPermissions(OkPermission.permission.GPS)
+                            .checkAndApplyOnly()
+                    }.show()
+            }
         }
     }
 }

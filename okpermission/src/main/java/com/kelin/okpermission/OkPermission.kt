@@ -24,10 +24,9 @@ import kotlin.collections.HashMap
  * **版本:** v 1.0.0
  */
 class OkPermission private constructor(private val weakActivity: WeakReference<Context>) {
-    class permission {
-        companion object {
-            const val NOTIFICATION = "kelin.permission.NOTIFICATION"
-        }
+    object permission {
+        const val GPS = "kelin.permission.GPS"
+        const val NOTIFICATION = "kelin.permission.NOTIFICATION"
     }
 
     companion object {
@@ -118,31 +117,30 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
         }
 
         /**
+         * 打开GPS开关页面。
+         * @param context 需要Activity的Context。
+         */
+        fun gotoGPSSettingsPage(context: Context) {
+            context.startActivity(
+                createSettingIntentGenerator(Permission.createDefault(permission.GPS)).generatorIntent(context)
+            )
+        }
+
+        /**
          * Check that certain permissions are registered in the manifest file.
          */
         private fun checkPermissionsRegistered(context: Context, vararg permissions: String) {
             val registeredPermissions = getManifestPermissions(context)
-            val unregisteredPermissions = permissions.filter { !registeredPermissions.contains(it) }.toMutableList()
+            val unregisteredPermissions = permissions.filter { !registeredPermissions.contains(it) && !it.startsWith("kelin.permission") }.toMutableList()
             if (unregisteredPermissions.isNotEmpty()) {
-                val hasNotificationPermission = if (unregisteredPermissions.contains(permission.NOTIFICATION)) {
-                    unregisteredPermissions.remove(permission.NOTIFICATION)
-                    true
-                } else {
-                    false
-                }
                 throw IllegalStateException(
-                    "${if (hasNotificationPermission) {
-                        "OkPermission.Permission.NOTIFICATION must be used addNotificationPermission method to add. \n"
-                    } else {
-                        ""
-                    }}${
                     if (unregisteredPermissions.isNotEmpty()) {
-                        "And\nThere are some permissions aren't registered in the manifest file! The following:\n${
+                        "There are some permissions aren't registered in the manifest file! The following:\n${
                         unregisteredPermissions.joinToString("\n")
                         }"
                     } else {
                         ""
-                    }}\n"
+                    }
                 )
             }
         }
@@ -271,6 +269,17 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
      * 被授权使用则直接进行回调，如果没有或部分权限没有被授权使用则会针对没有授权的权限进行申请，等用户操作完毕后再进行回调。
      *
      * 注意：如果没有通过```add***Permissions```方法添加权限的话会检测清单文件中注册了的所有权限。
+     */
+    fun checkAndApplyOnly() {
+        doOnApplyPermission { _, _ -> }
+    }
+
+    /**
+     * 检测并申请权限，每当你需要使用必须申请权限在能使用的功能时你无需关心权限是否已经被用户授权，你只需要将你需要的权限
+     * 通过```add***Permissions```方法添加进来，然后调用该方法即可。调用该方法后会首先去检测权限是否已经被授权使用，如果已经
+     * 被授权使用则直接进行回调，如果没有或部分权限没有被授权使用则会针对没有授权的权限进行申请，等用户操作完毕后再进行回调。
+     *
+     * 注意：如果没有通过```add***Permissions```方法添加权限的话会检测清单文件中注册了的所有权限。
      *
      * @param onApplyFinished
      *
@@ -369,6 +378,9 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
                     }
                     Manifest.permission.WRITE_SETTINGS -> {
                         WriteSettingsApplicant::class.java
+                    }
+                    permission.GPS -> {
+                        GPSApplicant::class.java
                     }
                     else -> {
                         DefaultApplicant::class.java
