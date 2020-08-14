@@ -12,6 +12,10 @@
 ![DemoApk](materials/demo_download.png)
 
 ## 更新
+
+#### 3.1.2 适配修改系统设置权限。
+   增加对```Manifest.permission.WRITE_SETTINGS```权限的适配
+
 #### 3.1.1 OkActivityResult启动页面后支持直接获取Intent。
   由于在某些场景下我们要启动的页面并不是我们自己的页面，而是系统页面或者是第三方应用的页面，而这种情况下我们只能且必须得到Intent。
   此时我们只需要将泛型设置为Intent即可，栗子：
