@@ -212,5 +212,16 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
         }
+        tv11.setOnClickListener {
+            OkPermission.with(this)
+                .addDefaultPermissions(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
+                .checkAndApply { granted, permissions ->
+                    if (granted) {
+                        Toast.makeText(this, "定位权限已开启", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "定位权限已禁用", Toast.LENGTH_SHORT).show()
+                    }
+                }
+        }
     }
 }
