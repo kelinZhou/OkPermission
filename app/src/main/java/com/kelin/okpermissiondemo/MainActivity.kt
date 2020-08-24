@@ -218,7 +218,7 @@ class MainActivity : AppCompatActivity() {
         tv11.setOnClickListener {
             if (OkPermission.with(this).addDefaultPermissions(OkPermission.permission.GPS).isGranted()) {
                 OkPermission.with(this)
-                    .addDefaultPermissions(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION)
+                    .addDefaultPermissions(*OkPermission.permission_group.ACCESS_LOCATION)
                     .checkAndApply { granted, permissions ->
                         if (granted) {
                             Toast.makeText(this, "定位权限已开启", Toast.LENGTH_SHORT).show()
