@@ -1,11 +1,11 @@
 package com.kelin.okpermission
 
 import android.app.Activity
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
+import android.util.Log
 import android.util.SparseArray
 import androidx.fragment.app.FragmentActivity
 import com.kelin.okpermission.router.ActivityResultRouter
@@ -47,7 +47,9 @@ object OkActivityResult {
             if (e == null) {
                 onResult(resultCode, data)
             } else {
-                throw ActivityNotFoundException("The activity not fount! \n${e.message}")
+                Log.e("OkActivityResult", "The activity not fount! \n${e.message}")
+                e.printStackTrace()
+                onResult(Activity.RESULT_CANCELED, null)
             }
         }
     }
@@ -71,7 +73,9 @@ object OkActivityResult {
             if (e == null) {
                 onResult(resultCode)
             } else {
-                throw ActivityNotFoundException("The activity not fount! \n${e.message}")
+                Log.e("OkActivityResult", "The activity not fount! \n${e.message}")
+                e.printStackTrace()
+                onResult(Activity.RESULT_CANCELED)
             }
         }
     }
@@ -116,7 +120,7 @@ object OkActivityResult {
 
     @Suppress("UNCHECKED_CAST")
     private fun <D> getResultData(intent: Intent): D? {
-        return intent.extras?.get(KEY_RESULT_DATA).let { (it as? D)?: intent as? D }
+        return intent.extras?.get(KEY_RESULT_DATA).let { (it as? D) ?: intent as? D }
     }
 
     @JvmOverloads
@@ -418,7 +422,7 @@ object OkActivityResult {
             resultCallbackCache.remove(requestCode)
             try {
                 callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
-            }catch (e: ClassCastException){
+            } catch (e: ClassCastException) {
                 callback?.invoke(resultCode, null, null)
             }
         }
@@ -465,7 +469,7 @@ object OkActivityResult {
             resultCallbackCache.remove(requestCode)
             try {
                 callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
-            }catch (e: ClassCastException){
+            } catch (e: ClassCastException) {
                 callback?.invoke(resultCode, null, null)
             }
         }
