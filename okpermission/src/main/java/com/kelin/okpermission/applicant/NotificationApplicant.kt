@@ -1,6 +1,5 @@
 package com.kelin.okpermission.applicant
 
-import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
@@ -18,7 +17,7 @@ import com.kelin.okpermission.router.PermissionRequestRouter
  *
  * **版本:** v 1.0.0
  */
-class NotificationApplicant(activity: Activity) : PermissionsApplicant(activity) {
+class NotificationApplicant(target: Any) : PermissionsApplicant(target) {
 
     override fun checkSelfPermission(permission: Permission): Boolean {
         return areNotificationsEnabled() && if (permission is Permission.NotificationPermission) {

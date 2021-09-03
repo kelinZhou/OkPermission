@@ -1,6 +1,5 @@
 package com.kelin.okpermission.applicant
 
-import android.app.Activity
 import android.os.Build
 import android.provider.Settings
 import com.kelin.okpermission.OkActivityResult
@@ -17,7 +16,7 @@ import com.kelin.okpermission.router.PermissionRequestRouter
  *
  * **版本:** v 1.0.0
  */
-class WriteSettingsApplicant(activity: Activity) : PermissionsApplicant(activity) {
+class WriteSettingsApplicant(target: Any) : PermissionsApplicant(target) {
     override fun checkSelfPermission(permission: Permission): Boolean {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.System.canWrite(applicationContext)
     }

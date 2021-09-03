@@ -1,6 +1,5 @@
 package com.kelin.okpermission.applicant
 
-import android.app.Activity
 import android.app.AppOpsManager
 import android.content.Context
 import android.os.Binder
@@ -20,7 +19,7 @@ import com.kelin.okpermission.router.PermissionRequestRouter
  *
  * **版本:** v 1.0.0
  */
-class SystemWindowApplicant(activity: Activity) : PermissionsApplicant(activity) {
+class SystemWindowApplicant(target: Any) : PermissionsApplicant(target) {
 
     override fun checkSelfPermission(permission: Permission): Boolean {
         return checkSystemPermission()

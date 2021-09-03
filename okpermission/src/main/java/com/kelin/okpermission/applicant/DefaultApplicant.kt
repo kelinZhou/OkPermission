@@ -1,6 +1,5 @@
 package com.kelin.okpermission.applicant
 
-import android.app.Activity
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.kelin.okpermission.permission.Permission
@@ -15,7 +14,7 @@ import com.kelin.okpermission.router.PermissionRequestRouter
  *
  * **版本:** v 1.0.0
  */
-class DefaultApplicant(context: Activity) : PermissionsApplicant(context) {
+class DefaultApplicant(target: Any) : PermissionsApplicant(target) {
 
     override fun checkSelfPermission(permission: Permission): Boolean {
         return ContextCompat.checkSelfPermission(

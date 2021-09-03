@@ -1,6 +1,5 @@
 package com.kelin.okpermission.applicant
 
-import android.app.Activity
 import android.os.Build
 import com.kelin.okpermission.OkActivityResult
 import com.kelin.okpermission.permission.Permission
@@ -15,7 +14,7 @@ import com.kelin.okpermission.router.PermissionRequestRouter
  *
  * **版本:** v 1.0.0
  */
-class ApkInstallApplicant(context: Activity) : PermissionsApplicant(context) {
+class ApkInstallApplicant(target: Any) : PermissionsApplicant(target) {
 
     override fun checkSelfPermission(permission: Permission): Boolean {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.O || activity.packageManager.canRequestPackageInstalls()

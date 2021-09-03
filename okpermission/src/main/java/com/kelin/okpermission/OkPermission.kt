@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.fragment.app.Fragment
 import com.kelin.okpermission.applicant.*
 import com.kelin.okpermission.applicant.intentgenerator.*
 import com.kelin.okpermission.permission.Permission
@@ -23,7 +24,7 @@ import kotlin.collections.HashMap
  *
  * **版本:** v 1.0.0
  */
-class OkPermission private constructor(private val weakActivity: WeakReference<Context>) {
+class OkPermission private constructor(private val weakTarget: WeakReference<Any>) {
     object permission {
         const val GPS = "kelin.permission.GPS"
         const val NOTIFICATION = "kelin.permission.NOTIFICATION"
@@ -66,6 +67,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
     companion object {
 
         private val BRAND = Build.MANUFACTURER.toLowerCase(Locale.CHINA)
+
         /**
          * 创建OkPermission并依附于Activity。
          *
@@ -86,6 +88,15 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
          */
         fun with(activity: Activity): OkPermission {
             return OkPermission(WeakReference(activity))
+        }
+
+        /**
+         * 创建OkPermission并依附于Activity。
+         *
+         * @param fragment 当前的Fragment对象，如果您是在Fragment中使用则需要通过调用该方法来创建OkPermission，否者可能会出现IllegalStateException: FragmentManager is already executing transactions。
+         */
+        fun with(fragment: Fragment): OkPermission {
+            return OkPermission(WeakReference(fragment))
         }
 
         /**
@@ -170,7 +181,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
                 throw IllegalStateException(
                     if (unregisteredPermissions.isNotEmpty()) {
                         "There are some permissions aren't registered in the manifest file! The following:\n${
-                        unregisteredPermissions.joinToString("\n")
+                            unregisteredPermissions.joinToString("\n")
                         }"
                     } else {
                         ""
@@ -200,9 +211,27 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
                 else -> AppDetailIntentGenerator(permission)
             }
         }
+
+        internal fun getActivityByTarget(target: Any): Activity {
+            return when (target) {
+                is Activity -> {
+                    target
+                }
+                is Fragment -> {
+                    target.requireActivity()
+                }
+                is android.app.Fragment -> {
+                    target.activity
+                }
+                else -> {
+                    throw NullPointerException("The target must be Activity or Fragment!!!")
+                }
+            }
+        }
     }
 
     private val needPermissions = ArrayList<Permission>()
+
     /**
      * 检测权限类型的拦截器。
      */
@@ -212,8 +241,9 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
     private var settingsIntentGeneratorInterceptor: ((permission: Permission) -> SettingIntentGenerator?)? = null
 
     private val context: Context?
-        get() = weakActivity.get()
-
+        get() = weakTarget.get()?.let {
+            getActivityByTarget(it)
+        }
 
     /**
      * **添加弱申请权限。**
@@ -404,7 +434,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
         }
     }
 
-    private fun createApplicantManager(context: Context): ApplicantManager? {
+    private fun createApplicantManager(target: Any): ApplicantManager? {
         val applicants = HashMap<Class<out PermissionsApplicant>, PermissionsApplicant>()
         needPermissions.forEach {
             val applicantClass = if (checkPermissionTypeInterceptor?.interceptMake(it) == true) {
@@ -433,7 +463,7 @@ class OkPermission private constructor(private val weakActivity: WeakReference<C
             }
             val a = applicants[applicantClass]
             if (a == null) {
-                val applicant = applicantClass.getConstructor(Activity::class.java).newInstance(context)
+                val applicant = applicantClass.getConstructor(Any::class.java).newInstance(target)
                 applicant.intentGenerator = settingsIntentGeneratorInterceptor?.invoke(it) ?: createSettingIntentGenerator(it)
                 applicant.addPermission(it)
                 applicant.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor

@@ -7,8 +7,11 @@ import android.os.Build
 import android.os.Bundle
 import android.util.SparseArray
 import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentManager
 import com.kelin.okpermission.OkActivityResult
+import com.kelin.okpermission.OkPermission
 import com.kelin.okpermission.Renewable
 import com.kelin.okpermission.applicant.intentgenerator.AppDetailIntentGenerator
 import com.kelin.okpermission.applicant.intentgenerator.SettingIntentGenerator
@@ -26,8 +29,10 @@ import com.kelin.okpermission.router.SupportBasicRouter
  *
  * **版本:** v 1.0.0
  */
-abstract class PermissionsApplicant(protected val activity: Activity) {
+abstract class PermissionsApplicant(private val target: Any) {
     private val permissionList: MutableList<Permission> = ArrayList()
+    protected val activity: Activity
+        get() = OkPermission.getActivityByTarget(target)
     protected val applicationContext: Context
         get() = activity.applicationContext
     internal lateinit var intentGenerator: SettingIntentGenerator
@@ -237,27 +242,45 @@ abstract class PermissionsApplicant(protected val activity: Activity) {
     }
 
     private fun getRouter(context: Activity): PermissionRequestRouter {
-        return findRouter(context) ?: createRouter(context)
+        return findRouter(context) ?: createRouter()
     }
 
-    private fun createRouter(activity: Activity): PermissionRequestRouter {
-        val router: PermissionRequestRouter
-        if (activity is FragmentActivity) {
-            router = SupportPermissionRouter()
-            val fm = activity.supportFragmentManager
-            fm.beginTransaction()
-                .add(router, ROUTER_TAG)
-                .commitAllowingStateLoss()
-            fm.executePendingTransactions()
-        } else {
-            router = PermissionRouter()
-            val fm = activity.fragmentManager
-            fm.beginTransaction()
-                .add(router, ROUTER_TAG)
-                .commitAllowingStateLoss()
-            fm.executePendingTransactions()
+    private fun createRouter(): PermissionRequestRouter {
+        return when (target) {
+            is FragmentActivity -> SupportPermissionRouter().also {
+                addRouter(target.supportFragmentManager, it)
+            }
+            is Activity -> PermissionRouter().also {
+                val fm = target.fragmentManager
+                fm.beginTransaction()
+                    .add(it, ROUTER_TAG)
+                    .commitAllowingStateLoss()
+                fm.executePendingTransactions()
+            }
+            is Fragment -> SupportPermissionRouter().also {
+                addRouter(target.childFragmentManager, it)
+            }
+            is android.app.Fragment -> PermissionRouter().also {
+                addRouter(target.fragmentManager, it)
+            }
+            else -> {
+                throw NullPointerException("The target must be Activity or Fragment!!!")
+            }
         }
-        return router
+    }
+
+    private fun addRouter(fm: FragmentManager, router: SupportBasicRouter) {
+        fm.beginTransaction()
+            .add(router, ROUTER_TAG)
+            .commitAllowingStateLoss()
+        fm.executePendingTransactions()
+    }
+
+    private fun addRouter(fm: android.app.FragmentManager, router: BasicRouter) {
+        fm.beginTransaction()
+            .add(router, ROUTER_TAG)
+            .commitAllowingStateLoss()
+        fm.executePendingTransactions()
     }
 
     private fun findRouter(activity: Activity): PermissionRequestRouter? {
