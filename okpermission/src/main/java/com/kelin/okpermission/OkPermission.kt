@@ -245,6 +245,9 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
             getActivityByTarget(it)
         }
 
+    private val target: Any?
+        get() = weakTarget.get()
+
     /**
      * **添加弱申请权限。**
      *
@@ -394,7 +397,7 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
             if (needPermissions.isEmpty()) {
                 needPermissions.addAll(getManifestPermissions(activity).map { Permission.createDefault(it, false) })
             }
-            createApplicantManager(activity)?.startCheck() ?: emptyArray()
+            createApplicantManager()?.startCheck() ?: emptyArray()
         } else {
             needPermissions.map { it.permission }.toTypedArray()
         }
@@ -430,50 +433,55 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
             if (needPermissions.isEmpty()) {
                 needPermissions.addAll(getManifestPermissions(activity).map { Permission.createDefault(it, false) })
             }
-            createApplicantManager(activity)?.startApply(onApplyFinished)
+            createApplicantManager()?.startApply(onApplyFinished)
         }
     }
 
-    private fun createApplicantManager(target: Any): ApplicantManager? {
-        val applicants = HashMap<Class<out PermissionsApplicant>, PermissionsApplicant>()
-        needPermissions.forEach {
-            val applicantClass = if (checkPermissionTypeInterceptor?.interceptMake(it) == true) {
-                checkPermissionTypeInterceptor!!.makeApplicant(it)
-            } else {
-                when (it.permission) {
-                    Manifest.permission.REQUEST_INSTALL_PACKAGES -> {
-                        ApkInstallApplicant::class.java
-                    }
-                    Manifest.permission.SYSTEM_ALERT_WINDOW -> {
-                        SystemWindowApplicant::class.java
-                    }
-                    permission.NOTIFICATION -> {
-                        NotificationApplicant::class.java
-                    }
-                    Manifest.permission.WRITE_SETTINGS -> {
-                        WriteSettingsApplicant::class.java
-                    }
-                    permission.GPS -> {
-                        GPSApplicant::class.java
-                    }
-                    else -> {
-                        DefaultApplicant::class.java
+    private fun createApplicantManager(): ApplicantManager? {
+        val target = target
+        return if (target != null) {
+            val applicants = HashMap<Class<out PermissionsApplicant>, PermissionsApplicant>()
+            needPermissions.forEach {
+                val applicantClass = if (checkPermissionTypeInterceptor?.interceptMake(it) == true) {
+                    checkPermissionTypeInterceptor!!.makeApplicant(it)
+                } else {
+                    when (it.permission) {
+                        Manifest.permission.REQUEST_INSTALL_PACKAGES -> {
+                            ApkInstallApplicant::class.java
+                        }
+                        Manifest.permission.SYSTEM_ALERT_WINDOW -> {
+                            SystemWindowApplicant::class.java
+                        }
+                        permission.NOTIFICATION -> {
+                            NotificationApplicant::class.java
+                        }
+                        Manifest.permission.WRITE_SETTINGS -> {
+                            WriteSettingsApplicant::class.java
+                        }
+                        permission.GPS -> {
+                            GPSApplicant::class.java
+                        }
+                        else -> {
+                            DefaultApplicant::class.java
+                        }
                     }
                 }
+                val a = applicants[applicantClass]
+                if (a == null) {
+                    val applicant = applicantClass.getConstructor(Any::class.java).newInstance(target)
+                    applicant.intentGenerator = settingsIntentGeneratorInterceptor?.invoke(it) ?: createSettingIntentGenerator(it)
+                    applicant.addPermission(it)
+                    applicant.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
+                    applicants[applicantClass] = applicant
+                } else {
+                    a.addPermission(it)
+                    a.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
+                }
             }
-            val a = applicants[applicantClass]
-            if (a == null) {
-                val applicant = applicantClass.getConstructor(Any::class.java).newInstance(target)
-                applicant.intentGenerator = settingsIntentGeneratorInterceptor?.invoke(it) ?: createSettingIntentGenerator(it)
-                applicant.addPermission(it)
-                applicant.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
-                applicants[applicantClass] = applicant
-            } else {
-                a.addPermission(it)
-                a.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
-            }
+            ApplicantManager(applicants.values)
+        } else {
+            null
         }
-        return ApplicantManager(applicants.values)
     }
 
     /**
