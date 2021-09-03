@@ -13,6 +13,9 @@
 
 ## 更新
 
+#### 3.2.0 修复在Fragment中使用时发现的问题。
+   修复在Fragment中使用时会出现IllegalStateException: FragmentManager is already executing transactions的Bug。
+
 #### 3.1.3 增加自定义GPS权限以后优化代码提高易用性。
    1.增加自定义权限```OkPermission.permission.GPS```，用法和普通权限一样，支持检测是否已经授权，支持检测并申请(如果用户没有打开GPS开关则会引导用户去开启)。
    
