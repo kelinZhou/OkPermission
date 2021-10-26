@@ -13,6 +13,9 @@
 
 ## 更新
 
+#### 3.2.1 修复使用时偶现Bug。
+   修复使用时偶现IllegalStateException: FragmentManager is already executing transactions的Bug。
+
 #### 3.2.0 修复在Fragment中使用时发现的问题。
    修复在Fragment中使用时会出现IllegalStateException: FragmentManager is already executing transactions的Bug。
 
