@@ -365,14 +365,22 @@ object OkActivityResult {
             fm.beginTransaction()
                 .add(router, ROUTER_TAG)
                 .commitAllowingStateLoss()
-            fm.executePendingTransactions()
+            try {
+                fm.executePendingTransactions()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         } else {
             router = ActivityResultRouterImpl()
             val fm = activity.fragmentManager
             fm.beginTransaction()
                 .add(router, ROUTER_TAG)
                 .commitAllowingStateLoss()
-            fm.executePendingTransactions()
+            try {
+                fm.executePendingTransactions()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
         return router
     }
