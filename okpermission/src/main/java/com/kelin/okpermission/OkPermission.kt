@@ -7,9 +7,11 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import com.kelin.okpermission.applicant.*
 import com.kelin.okpermission.applicant.intentgenerator.*
 import com.kelin.okpermission.permission.Permission
+import com.kelin.okpermission.router.PermissionRouter
 import java.lang.ref.WeakReference
 import java.util.*
 import kotlin.collections.ArrayList
@@ -441,6 +443,7 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
         val target = target
         return if (target != null) {
             val applicants = HashMap<Class<out PermissionsApplicant>, PermissionsApplicant>()
+            val router = getRouter(target)
             needPermissions.forEach {
                 val applicantClass = if (checkPermissionTypeInterceptor?.interceptMake(it) == true) {
                     checkPermissionTypeInterceptor!!.makeApplicant(it)
@@ -468,7 +471,7 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
                 }
                 val a = applicants[applicantClass]
                 if (a == null) {
-                    val applicant = applicantClass.getConstructor(Any::class.java).newInstance(target)
+                    val applicant = applicantClass.getConstructor(Activity::class.java, PermissionRouter::class.java).newInstance(getActivityByTarget(target), router)
                     applicant.intentGenerator = settingsIntentGeneratorInterceptor?.invoke(it) ?: createSettingIntentGenerator(it)
                     applicant.addPermission(it)
                     applicant.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
@@ -478,9 +481,27 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
                     a.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
                 }
             }
-            ApplicantManager(applicants.values)
+            ApplicantManager(router, applicants.values)
         } else {
             null
+        }
+    }
+
+    private fun getRouter(target: Any): PermissionRouter {
+        return when (target) {
+            is FragmentActivity -> target.supportFragmentManager.fragments.firstOrNull()?.let { fragment ->
+                PermissionRouter.getAndroidxRouter(target.supportFragmentManager, fragment.childFragmentManager)
+            } ?: PermissionRouter.getAndroidxRouter(target.supportFragmentManager)
+            is Activity -> PermissionRouter.getAppRouter(target.fragmentManager)
+            is Fragment -> PermissionRouter.getAndroidxRouter(target.childFragmentManager)
+            is android.app.Fragment -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                PermissionRouter.getAppRouter(target.childFragmentManager)
+            } else {
+                PermissionRouter.getAppRouter(target.fragmentManager)
+            }
+            else -> {
+                throw NullPointerException("The target must be Activity or Fragment!!!")
+            }
         }
     }
 

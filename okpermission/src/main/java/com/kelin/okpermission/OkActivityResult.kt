@@ -9,8 +9,8 @@ import android.util.Log
 import android.util.SparseArray
 import androidx.fragment.app.FragmentActivity
 import com.kelin.okpermission.router.ActivityResultRouter
-import com.kelin.okpermission.router.BasicRouter
-import com.kelin.okpermission.router.SupportBasicRouter
+import com.kelin.okpermission.router.AppBasicRouter
+import com.kelin.okpermission.router.AndroidxBasicRouter
 import java.io.Serializable
 import java.lang.ClassCastException
 
@@ -360,7 +360,7 @@ object OkActivityResult {
     private fun <D> createRouter(activity: Activity): ActivityResultRouter<D> {
         val router: ActivityResultRouter<D>
         if (activity is FragmentActivity) {
-            router = SupportActivityResultRouterImpl()
+            router = AndroidxActivityResultRouterImpl()
             val fm = activity.supportFragmentManager
             fm.beginTransaction()
                 .add(router, ROUTER_TAG)
@@ -371,7 +371,7 @@ object OkActivityResult {
                 e.printStackTrace()
             }
         } else {
-            router = ActivityResultRouterImpl()
+            router = AppActivityResultRouterImpl()
             val fm = activity.fragmentManager
             fm.beginTransaction()
                 .add(router, ROUTER_TAG)
@@ -402,7 +402,7 @@ object OkActivityResult {
         }
     }
 
-    internal class ActivityResultRouterImpl<D> : BasicRouter(), ActivityResultRouter<D> {
+    internal class AppActivityResultRouterImpl<D> : AppBasicRouter(), ActivityResultRouter<D> {
 
         private val resultCallbackCache = SparseArray<(resultCode: Int, data: D?, e: Exception?) -> Unit>()
 
@@ -453,7 +453,7 @@ object OkActivityResult {
         }
     }
 
-    internal class SupportActivityResultRouterImpl<D> : SupportBasicRouter(), ActivityResultRouter<D> {
+    internal class AndroidxActivityResultRouterImpl<D> : AndroidxBasicRouter(), ActivityResultRouter<D> {
 
         private val resultCallbackCache = SparseArray<(resultCode: Int, data: D?, e: Exception?) -> Unit>()
 

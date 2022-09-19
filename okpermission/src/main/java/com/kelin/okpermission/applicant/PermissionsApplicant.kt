@@ -2,23 +2,13 @@ package com.kelin.okpermission.applicant
 
 import android.app.Activity
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
-import android.os.Bundle
-import android.util.SparseArray
 import androidx.appcompat.app.AlertDialog
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentActivity
-import androidx.fragment.app.FragmentManager
 import com.kelin.okpermission.OkActivityResult
-import com.kelin.okpermission.OkPermission
 import com.kelin.okpermission.Renewable
 import com.kelin.okpermission.applicant.intentgenerator.AppDetailIntentGenerator
 import com.kelin.okpermission.applicant.intentgenerator.SettingIntentGenerator
 import com.kelin.okpermission.permission.Permission
-import com.kelin.okpermission.router.BasicRouter
-import com.kelin.okpermission.router.PermissionRequestRouter
-import com.kelin.okpermission.router.SupportBasicRouter
+import com.kelin.okpermission.router.PermissionRouter
 
 /**
  * **描述:** 权限申请器。
@@ -29,10 +19,8 @@ import com.kelin.okpermission.router.SupportBasicRouter
  *
  * **版本:** v 1.0.0
  */
-abstract class PermissionsApplicant(private val target: Any) {
+abstract class PermissionsApplicant(protected val activity: Activity, private val router: PermissionRouter) {
     private val permissionList: MutableList<Permission> = ArrayList()
-    protected val activity: Activity
-        get() = OkPermission.getActivityByTarget(target)
     protected val applicationContext: Context
         get() = activity.applicationContext
     internal lateinit var intentGenerator: SettingIntentGenerator
@@ -55,12 +43,12 @@ abstract class PermissionsApplicant(private val target: Any) {
      * 判断用户是否勾选了禁止后不再询问。
      */
     protected abstract fun shouldShowRequestPermissionRationale(
-        router: PermissionRequestRouter,
+        router: PermissionRouter,
         permission: Permission
     ): Boolean
 
     protected abstract fun requestPermissions(
-        router: PermissionRequestRouter,
+        router: PermissionRouter,
         permissions: Array<out Permission>,
         onResult: (permissions: Array<out Permission>) -> Unit
     )
@@ -85,7 +73,6 @@ abstract class PermissionsApplicant(private val target: Any) {
         finished: () -> Unit
     ) {
         var needCheck = true
-        val router = getRouter(activity)
         val deniedPermissions = ArrayList<Permission>()
         val canRequestPermissions = ArrayList<Permission>()
         for (permission in applyPermissions) {
@@ -119,7 +106,6 @@ abstract class PermissionsApplicant(private val target: Any) {
         applyPermissions: Array<out Permission>,
         finished: () -> Unit
     ) {
-        val router = getRouter(activity)
         requestPermissions(router, applyPermissions) { deniedPermissions ->
             when {
                 //如果用户已经同意了全部权限
@@ -239,160 +225,5 @@ abstract class PermissionsApplicant(private val target: Any) {
             }
         }
         return list.toTypedArray()
-    }
-
-    private fun getRouter(context: Activity): PermissionRequestRouter {
-        return findRouter(context) ?: createRouter()
-    }
-
-    private fun createRouter(): PermissionRequestRouter {
-        return when (target) {
-            is FragmentActivity -> SupportPermissionRouter().also {
-                addRouter(target.supportFragmentManager, it)
-            }
-            is Activity -> PermissionRouter().also {
-                val fm = target.fragmentManager
-                fm.beginTransaction()
-                    .add(it, ROUTER_TAG)
-                    .commitAllowingStateLoss()
-                fm.executePendingTransactions()
-            }
-            is Fragment -> SupportPermissionRouter().also {
-                addRouter(target.childFragmentManager, it)
-            }
-            is android.app.Fragment -> PermissionRouter().also {
-                addRouter(target.fragmentManager, it)
-            }
-            else -> {
-                throw NullPointerException("The target must be Activity or Fragment!!!")
-            }
-        }
-    }
-
-    private fun addRouter(fm: FragmentManager, router: SupportBasicRouter) {
-        fm.beginTransaction()
-            .add(router, ROUTER_TAG)
-            .commitAllowingStateLoss()
-        fm.executePendingTransactions()
-    }
-
-    private fun addRouter(fm: android.app.FragmentManager, router: BasicRouter) {
-        fm.beginTransaction()
-            .add(router, ROUTER_TAG)
-            .commitAllowingStateLoss()
-        fm.executePendingTransactions()
-    }
-
-    private fun findRouter(activity: Activity): PermissionRequestRouter? {
-        return if (activity is FragmentActivity) {
-            activity.supportFragmentManager.findFragmentByTag(ROUTER_TAG) as? PermissionRequestRouter
-        } else {
-            activity.fragmentManager.findFragmentByTag(ROUTER_TAG) as? PermissionRequestRouter
-        }
-    }
-
-    companion object {
-        private const val ROUTER_TAG = "ok_permission_apply_permissions_router_tag"
-    }
-
-    internal class PermissionRouter : BasicRouter(), PermissionRequestRouter {
-        private val permissionCallbackCache = SparseArray<CallbackWrapper>()
-
-
-        override fun requestPermissions(
-            permissions: Array<out Permission>,
-            onResult: (permissions: Array<out Permission>) -> Unit
-        ) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val requestCode = makeRequestCode()
-                permissionCallbackCache.put(requestCode, CallbackWrapper(permissions, onResult))
-                requestPermissions(permissions.map { it.permission }.toTypedArray(), requestCode)
-            } else {
-                onResult(emptyArray())
-            }
-        }
-
-        override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-            val callback = permissionCallbackCache[requestCode]
-            permissionCallbackCache.remove(requestCode)
-            callback?.onResult(permissions, grantResults)
-        }
-
-        override fun onDestroy() {
-            super.onDestroy()
-            permissionCallbackCache.clear()
-        }
-
-        /**
-         * 生成一个code。
-         */
-        private fun makeRequestCode(): Int {
-            val code = randomGenerator.nextInt(0, 0x0001_0000)
-            return if (permissionCallbackCache.indexOfKey(code) < 0) {
-                code
-            } else {
-                makeRequestCode()
-            }
-        }
-    }
-
-    internal class SupportPermissionRouter : SupportBasicRouter(), PermissionRequestRouter {
-
-        private val permissionCallbackCache = SparseArray<CallbackWrapper>()
-
-        override fun onCreate(savedInstanceState: Bundle?) {
-            super.onCreate(savedInstanceState)
-            retainInstance = true
-        }
-
-        override fun requestPermissions(
-            permissions: Array<out Permission>,
-            onResult: (permissions: Array<out Permission>) -> Unit
-        ) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val requestCode = makeRequestCode()
-                permissionCallbackCache.put(requestCode, CallbackWrapper(permissions, onResult))
-                requestPermissions(permissions.map { it.permission }.toTypedArray(), requestCode)
-            } else {
-                onResult(emptyArray())
-            }
-        }
-
-        override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
-            val callback = permissionCallbackCache[requestCode]
-            permissionCallbackCache.remove(requestCode)
-            callback?.onResult(permissions, grantResults)
-        }
-
-        override fun onDestroy() {
-            super.onDestroy()
-            permissionCallbackCache.clear()
-        }
-
-        /**
-         * 生成一个code。
-         */
-        private fun makeRequestCode(): Int {
-            val code = randomGenerator.nextInt(0, 0x0001_0000)
-            return if (permissionCallbackCache.indexOfKey(code) < 0) {
-                code
-            } else {
-                makeRequestCode()
-            }
-        }
-    }
-
-    private class CallbackWrapper(
-        val permissions: Array<out Permission>,
-        val callback: (permissions: Array<out Permission>) -> Unit
-    ) {
-        fun onResult(permissionArray: Array<String>, grantResults: IntArray) {
-            grantResults.forEachIndexed { index, i ->
-                if (i == PackageManager.PERMISSION_GRANTED) {
-                    permissionArray[index] = ""
-                }
-            }
-            callback(permissions.filter { permissionArray.contains(it.permission) }.toTypedArray())
-        }
     }
 }

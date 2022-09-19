@@ -2,6 +2,7 @@ package com.kelin.okpermission
 
 import com.kelin.okpermission.applicant.PermissionsApplicant
 import com.kelin.okpermission.permission.Permission
+import com.kelin.okpermission.router.PermissionRouter
 
 /**
  * **描述:** 权限申请器的管理器。
@@ -12,7 +13,7 @@ import com.kelin.okpermission.permission.Permission
  *
  * **版本:** v 1.0.0
  */
-internal class ApplicantManager(private var applicants: MutableCollection<PermissionsApplicant>) {
+internal class ApplicantManager(private val router: PermissionRouter, private var applicants: MutableCollection<PermissionsApplicant>) {
     private val appliedApplicant: MutableList<PermissionsApplicant> = ArrayList(applicants.size)
 
     fun startApply(listener: (granted: Boolean, permissions: Array<out String>) -> Unit) {
@@ -35,6 +36,7 @@ internal class ApplicantManager(private var applicants: MutableCollection<Permis
                 }
             }
             listener(isGranted, deniedPermissions.map { it.permission }.toTypedArray())
+            router.recycle()
         }
     }
 

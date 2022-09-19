@@ -1,5 +1,6 @@
 package com.kelin.okpermission.applicant
 
+import android.app.Activity
 import android.app.AppOpsManager
 import android.content.Context
 import android.os.Binder
@@ -8,7 +9,7 @@ import android.provider.Settings
 import androidx.annotation.RequiresApi
 import com.kelin.okpermission.OkActivityResult
 import com.kelin.okpermission.permission.Permission
-import com.kelin.okpermission.router.PermissionRequestRouter
+import com.kelin.okpermission.router.PermissionRouter
 
 /**
  * **描述:** 系统悬浮窗权限的申请器。
@@ -19,7 +20,7 @@ import com.kelin.okpermission.router.PermissionRequestRouter
  *
  * **版本:** v 1.0.0
  */
-class SystemWindowApplicant(target: Any) : PermissionsApplicant(target) {
+class SystemWindowApplicant(activity: Activity, router: PermissionRouter) : PermissionsApplicant(activity, router) {
 
     override fun checkSelfPermission(permission: Permission): Boolean {
         return checkSystemPermission()
@@ -55,14 +56,14 @@ class SystemWindowApplicant(target: Any) : PermissionsApplicant(target) {
     }
 
     override fun shouldShowRequestPermissionRationale(
-        router: PermissionRequestRouter,
+        router: PermissionRouter,
         permission: Permission
     ): Boolean {
         return true
     }
 
     override fun requestPermissions(
-        router: PermissionRequestRouter,
+        router: PermissionRouter,
         permissions: Array<out Permission>,
         onResult: (permissions: Array<out Permission>) -> Unit
     ) {

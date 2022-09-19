@@ -1,9 +1,10 @@
 package com.kelin.okpermission.applicant
 
+import android.app.Activity
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.kelin.okpermission.permission.Permission
-import com.kelin.okpermission.router.PermissionRequestRouter
+import com.kelin.okpermission.router.PermissionRouter
 
 /**
  * **描述:** 默认的权限申请器。
@@ -14,7 +15,7 @@ import com.kelin.okpermission.router.PermissionRequestRouter
  *
  * **版本:** v 1.0.0
  */
-class DefaultApplicant(target: Any) : PermissionsApplicant(target) {
+class DefaultApplicant(activity: Activity, router: PermissionRouter) : PermissionsApplicant(activity, router) {
 
     override fun checkSelfPermission(permission: Permission): Boolean {
         return ContextCompat.checkSelfPermission(
@@ -24,14 +25,14 @@ class DefaultApplicant(target: Any) : PermissionsApplicant(target) {
     }
 
     override fun shouldShowRequestPermissionRationale(
-        router: PermissionRequestRouter,
+        router: PermissionRouter,
         permission: Permission
     ): Boolean {
         return router.shouldShowRequestPermissionRationale(permission.permission)
     }
 
     override fun requestPermissions(
-        router: PermissionRequestRouter,
+        router: PermissionRouter,
         permissions: Array<out Permission>,
         onResult: (permissions: Array<out Permission>) -> Unit
     ) {

@@ -1,12 +1,13 @@
 package com.kelin.okpermission.applicant
 
+import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationManagerCompat
 import com.kelin.okpermission.OkActivityResult
 import com.kelin.okpermission.permission.Permission
-import com.kelin.okpermission.router.PermissionRequestRouter
+import com.kelin.okpermission.router.PermissionRouter
 
 /**
  * **描述:** 通知权限申请器。
@@ -17,7 +18,7 @@ import com.kelin.okpermission.router.PermissionRequestRouter
  *
  * **版本:** v 1.0.0
  */
-class NotificationApplicant(target: Any) : PermissionsApplicant(target) {
+class NotificationApplicant(activity: Activity, router: PermissionRouter) : PermissionsApplicant(activity, router) {
 
     override fun checkSelfPermission(permission: Permission): Boolean {
         return areNotificationsEnabled() && if (permission is Permission.NotificationPermission) {
@@ -40,14 +41,14 @@ class NotificationApplicant(target: Any) : PermissionsApplicant(target) {
     }
 
     override fun shouldShowRequestPermissionRationale(
-        router: PermissionRequestRouter,
+        router: PermissionRouter,
         permission: Permission
     ): Boolean {
         return true
     }
 
     override fun requestPermissions(
-        router: PermissionRequestRouter,
+        router: PermissionRouter,
         permissions: Array<out Permission>,
         onResult: (permissions: Array<out Permission>) -> Unit
     ) {
@@ -73,7 +74,7 @@ class NotificationApplicant(target: Any) : PermissionsApplicant(target) {
 
     private fun onRequestChannels(
         permissions: Array<out Permission>,
-        router: PermissionRequestRouter,
+        router: PermissionRouter,
         onResult: (permissions: Array<out Permission>) -> Unit
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -110,7 +111,7 @@ class NotificationApplicant(target: Any) : PermissionsApplicant(target) {
     }
 
     private fun doOnRequestChannelsNotification(
-        router: PermissionRequestRouter,
+        router: PermissionRouter,
         permissions: Array<out Permission.NotificationPermission>,
         deniedPermissions: MutableList<Permission.NotificationPermission>,
         index: Int,

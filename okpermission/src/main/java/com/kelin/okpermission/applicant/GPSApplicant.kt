@@ -1,10 +1,11 @@
 package com.kelin.okpermission.applicant
 
+import android.app.Activity
 import android.content.Context
 import android.location.LocationManager
 import com.kelin.okpermission.OkActivityResult
 import com.kelin.okpermission.permission.Permission
-import com.kelin.okpermission.router.PermissionRequestRouter
+import com.kelin.okpermission.router.PermissionRouter
 
 /**
  * **描述:** 开启GPS的申请器。
@@ -15,7 +16,7 @@ import com.kelin.okpermission.router.PermissionRequestRouter
  *
  * **版本:** v 1.0.0
  */
-class GPSApplicant(target: Any) : PermissionsApplicant(target) {
+class GPSApplicant(activity: Activity, router: PermissionRouter) : PermissionsApplicant(activity, router) {
     override fun checkSelfPermission(permission: Permission): Boolean {
         return isGPSEnable()
     }
@@ -26,11 +27,11 @@ class GPSApplicant(target: Any) : PermissionsApplicant(target) {
         } ?: false
     }
 
-    override fun shouldShowRequestPermissionRationale(router: PermissionRequestRouter, permission: Permission): Boolean {
+    override fun shouldShowRequestPermissionRationale(router: PermissionRouter, permission: Permission): Boolean {
         return true
     }
 
-    override fun requestPermissions(router: PermissionRequestRouter, permissions: Array<out Permission>, onResult: (permissions: Array<out Permission>) -> Unit) {
+    override fun requestPermissions(router: PermissionRouter, permissions: Array<out Permission>, onResult: (permissions: Array<out Permission>) -> Unit) {
         OkActivityResult.startActivityOrException(activity, intentGenerator.generatorIntent(activity)) { _, e ->
             if (isGPSEnable()) {
                 onResult(emptyArray())
