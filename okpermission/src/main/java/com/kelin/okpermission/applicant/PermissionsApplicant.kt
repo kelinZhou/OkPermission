@@ -57,6 +57,10 @@ abstract class PermissionsApplicant(protected val activity: Activity, private va
         permissionList.add(permission)
     }
 
+    internal fun getNotGrantedPermissions(applyPermissions: Array<out Permission> = permissions): List<Permission> {
+        return applyPermissions.filter { !checkSelfPermission(it) }
+    }
+
     internal fun applyPermission(
         applyPermissions: Array<out Permission> = permissions,
         finished: () -> Unit

@@ -239,6 +239,14 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
      */
     private var checkPermissionTypeInterceptor: MakeApplicantInterceptor? = null
 
+    /**
+     * 权限用途说明弹窗。
+     */
+    private var permissionApplicationDialogInterceptor: ((permissions: Collection<Permission>, renewable: Renewable) -> Unit)? = null
+
+    /**
+     * 缺少权限提示弹窗。
+     */
     private var missingPermissionDialogInterceptor: ((renewable: Renewable) -> Unit)? = null
     private var settingsIntentGeneratorInterceptor: ((permission: Permission) -> SettingIntentGenerator?)? = null
 
@@ -414,6 +422,14 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
     }
 
     /**
+     *  设置申请权限的权限说明弹窗，由自己实现弹窗。该方法必须要在apply等相关申请权限的方法前调用。
+     */
+    fun setPermissionApplicationDialog(interceptor: (permissions: Collection<Permission>, renewable: Renewable) -> Unit): OkPermission {
+        permissionApplicationDialogInterceptor = interceptor
+        return this
+    }
+
+    /**
      * 拦截设置页面Intent生产器，由自己实现指定页面的跳转。该方法必须要在apply等相关申请权限的方法前调用。
      */
     fun interceptSettingsIntentGenerator(interceptor: (permission: Permission) -> SettingIntentGenerator?): OkPermission {
@@ -435,7 +451,7 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
             if (needPermissions.isEmpty()) {
                 needPermissions.addAll(getManifestPermissions(activity).map { Permission.createDefault(it, false) })
             }
-            createApplicantManager()?.startApply(onApplyFinished)
+            createApplicantManager()?.startApply(true, onApplyFinished)
         }
     }
 
@@ -481,7 +497,7 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
                     a.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
                 }
             }
-            ApplicantManager(router, applicants.values)
+            ApplicantManager(router, applicants.values, permissionApplicationDialogInterceptor)
         } else {
             null
         }

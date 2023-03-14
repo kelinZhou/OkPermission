@@ -76,10 +76,22 @@
             android:text="多类型申请混合权限"
             android:layout_marginTop="10dp"
             android:padding="10dp"
-            app:layout_constraintBottom_toTopOf="@id/tv6"
+            app:layout_constraintBottom_toTopOf="@id/tv12"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tv4"/>
+
+    <TextView
+            android:id="@+id/tv12"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="普通申请权限(弹窗权限说明)"
+            android:layout_marginTop="10dp"
+            android:padding="10dp"
+            app:layout_constraintTop_toBottomOf="@id/tv5"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/tv6"/>
 
     <TextView
             android:id="@+id/tv6"
@@ -88,7 +100,7 @@
             android:text="普通申请权限(自定义弹窗)"
             android:layout_marginTop="10dp"
             android:padding="10dp"
-            app:layout_constraintTop_toBottomOf="@id/tv5"
+            app:layout_constraintTop_toBottomOf="@id/tv12"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
             app:layout_constraintBottom_toTopOf="@id/tv7"/>

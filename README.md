@@ -13,6 +13,8 @@
 
 ## 更新
 
+#### 3.3.1 增加权限使用说明弹窗。
+   
 #### 3.3.0 修复使用时偶现Bug。
    1. 修复使用时在Fragment中使用Activity创建OkPermission会出现IllegalStateException: FragmentManager is already executing transactions的Bug。
    2. 优化代码逻辑，提升性能增加健壮性、稳定性。

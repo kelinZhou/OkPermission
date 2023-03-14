@@ -36,8 +36,4 @@ class EMUISettingsIntentGenerator(permission: Permission?) : SettingIntentGenera
             intent
         } else intent
     }
-
-    override fun onGeneratorNotificationIntent(context: Context, permission: Permission?): Intent {
-        return super.onGeneratorNotificationIntent(context, permission)
-    }
 }
