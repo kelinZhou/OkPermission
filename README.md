@@ -1,4 +1,4 @@
-# OkPermission
+# OkPermission [![](https://jitpack.io/v/kelinZhou/OkPermission.svg)](https://jitpack.io/#kelinZhou/OkPermission)
 #### 实现Android6.0动态权限的优雅获取，一行代码即可实现动态权限的获取。
 
 * * *
