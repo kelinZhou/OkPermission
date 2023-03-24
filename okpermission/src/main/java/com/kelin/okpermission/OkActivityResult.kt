@@ -431,9 +431,13 @@ object OkActivityResult {
             val callback = resultCallbackCache[requestCode]
             resultCallbackCache.remove(requestCode)
             try {
-                callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
+                if (resultCode == Activity.RESULT_OK) {
+                    callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
+                } else {
+                    callback?.invoke(resultCode, null, null)
+                }
             } catch (e: ClassCastException) {
-                callback?.invoke(resultCode, null, null)
+                callback?.invoke(resultCode, null, e)
             }
         }
 
@@ -478,9 +482,13 @@ object OkActivityResult {
             val callback = resultCallbackCache[requestCode]
             resultCallbackCache.remove(requestCode)
             try {
-                callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
+                if (resultCode == Activity.RESULT_OK) {
+                    callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
+                } else {
+                    callback?.invoke(resultCode, null, null)
+                }
             } catch (e: ClassCastException) {
-                callback?.invoke(resultCode, null, null)
+                callback?.invoke(resultCode, null, e)
             }
         }
 
