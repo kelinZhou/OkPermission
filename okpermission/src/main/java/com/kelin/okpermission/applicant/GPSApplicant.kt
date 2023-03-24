@@ -32,7 +32,7 @@ class GPSApplicant(activity: Activity, router: PermissionRouter) : PermissionsAp
     }
 
     override fun requestPermissions(router: PermissionRouter, permissions: Array<out Permission>, onResult: (permissions: Array<out Permission>) -> Unit) {
-        OkActivityResult.startActivityOrException(activity, intentGenerator.generatorIntent(activity)) { _, e ->
+        OkActivityResult.startActivityForCodeOrException(activity, intentGenerator.generatorIntent(activity)) { _, e ->
             if (isGPSEnable()) {
                 onResult(emptyArray())
             } else {

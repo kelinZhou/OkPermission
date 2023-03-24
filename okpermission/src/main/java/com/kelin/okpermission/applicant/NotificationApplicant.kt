@@ -55,7 +55,7 @@ class NotificationApplicant(activity: Activity, router: PermissionRouter) : Perm
         if (areNotificationsEnabled()) {
             onRequestChannels(permissions, router, onResult)
         } else {
-            OkActivityResult.startActivityOrException(
+            OkActivityResult.startActivityForCodeOrException(
                 activity,
                 intentGenerator.generatorIntent(activity)
             ) { _, e ->
@@ -90,7 +90,7 @@ class NotificationApplicant(activity: Activity, router: PermissionRouter) : Perm
                     doOnRequestChannelsNotification(router, channels, ArrayList(), 0, onResult)
                 }
             } else {
-                OkActivityResult.startActivityOrException(
+                OkActivityResult.startActivityForCodeOrException(
                     activity,
                     intentGenerator.generatorIntent(activity)
                 ) { _, e ->
@@ -118,7 +118,7 @@ class NotificationApplicant(activity: Activity, router: PermissionRouter) : Perm
         onResult: (permissions: Array<out Permission>) -> Unit
     ) {
         val curPermission = permissions[index]
-        OkActivityResult.startActivityOrException(
+        OkActivityResult.startActivityForCodeOrException(
             activity,
             intentGenerator.generatorIntent(
                 activity,
@@ -144,7 +144,7 @@ class NotificationApplicant(activity: Activity, router: PermissionRouter) : Perm
         onResult: (permissions: Array<out Permission>) -> Unit,
         permissions: Array<out Permission>
     ) {
-        OkActivityResult.startActivityOrException(
+        OkActivityResult.startActivityForCodeOrException(
             activity,
             intentGenerator.generatorAppDetailIntent(activity)
         ) { _, exception ->

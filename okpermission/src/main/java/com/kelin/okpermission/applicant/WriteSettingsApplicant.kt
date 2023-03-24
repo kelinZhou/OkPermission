@@ -27,7 +27,7 @@ class WriteSettingsApplicant(activity: Activity, router: PermissionRouter) : Per
     }
 
     override fun requestPermissions(router: PermissionRouter, permissions: Array<out Permission>, onResult: (permissions: Array<out Permission>) -> Unit) {
-        OkActivityResult.startActivityOrException(activity, intentGenerator.generatorIntent(activity)) { _, e ->
+        OkActivityResult.startActivityForCodeOrException(activity, intentGenerator.generatorIntent(activity)) { _, e ->
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.System.canWrite(applicationContext)) {
                 onResult(emptyArray())
             } else {

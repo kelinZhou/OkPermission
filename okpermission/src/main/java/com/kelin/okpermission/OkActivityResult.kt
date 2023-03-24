@@ -43,38 +43,13 @@ object OkActivityResult {
         options: Bundle? = null,
         onResult: (data: D?) -> Unit
     ) {
-        startActivityOrException<D>(activity, intent, options) { _, data, e ->
+        startActivityOrException<D>(activity, intent, options) { data, e ->
             if (e == null) {
                 onResult(data)
             } else {
                 Log.e("OkActivityResult", "The activity not fount! \n${e.message}")
                 e.printStackTrace()
                 onResult(null)
-            }
-        }
-    }
-    fun <D> startActivity(
-        activity: Activity,
-        clazz: Class<out Activity>,
-        options: Bundle? = null,
-        onResult: (resultCode: Int, data: D?) -> Unit
-    ) {
-        startActivity(activity, Intent(activity, clazz), options, onResult)
-    }
-
-    fun <D> startActivity(
-        activity: Activity,
-        intent: Intent,
-        options: Bundle? = null,
-        onResult: (resultCode: Int, data: D?) -> Unit
-    ) {
-        startActivityOrException<D>(activity, intent, options) { resultCode, data, e ->
-            if (e == null) {
-                onResult(resultCode, data)
-            } else {
-                Log.e("OkActivityResult", "The activity not fount! \n${e.message}")
-                e.printStackTrace()
-                onResult(Activity.RESULT_CANCELED, null)
             }
         }
     }
@@ -94,7 +69,7 @@ object OkActivityResult {
         options: Bundle? = null,
         onResult: (resultCode: Int) -> Unit
     ) {
-        startActivityOrException<Long>(activity, intent, options) { resultCode, d, e ->
+        startActivityForCodeOrException(activity, intent, options) { resultCode, e ->
             if (e == null) {
                 onResult(resultCode)
             } else {
@@ -109,7 +84,7 @@ object OkActivityResult {
         activity: Activity,
         clazz: Class<out Activity>,
         options: Bundle? = null,
-        onResult: (resultCode: Int, data: D?, e: Exception?) -> Unit
+        onResult: (data: D?, e: Exception?) -> Unit
     ) {
         startActivityOrException(activity, Intent(activity, clazz), options, onResult)
     }
@@ -118,27 +93,29 @@ object OkActivityResult {
         context: Activity,
         intent: Intent,
         options: Bundle? = null,
-        onResult: (resultCode: Int, data: D?, e: Exception?) -> Unit
+        onResult: (data: D?, e: Exception?) -> Unit
     ) {
-        getRouter<D>(context).startActivityForResult(intent, options, onResult)
+        getRouter<D>(context).startActivityForResult(intent, options){ _, data, e ->
+            onResult(data, e)
+        }
     }
 
-    fun startActivityOrException(
+    fun startActivityForCodeOrException(
         activity: Activity,
         clazz: Class<out Activity>,
         options: Bundle? = null,
         onResult: (resultCode: Int, e: Exception?) -> Unit
     ) {
-        startActivityOrException(activity, Intent(activity, clazz), options, onResult)
+        startActivityForCodeOrException(activity, Intent(activity, clazz), options, onResult)
     }
 
-    fun startActivityOrException(
+    fun startActivityForCodeOrException(
         context: Activity,
         intent: Intent,
         options: Bundle? = null,
         onResult: (resultCode: Int, e: Exception?) -> Unit
     ) {
-        getRouter<Any>(context).startActivityForResult(intent, options) { resultCode, data, e ->
+        getRouter<Any>(context).startActivityForResult(intent, options) { resultCode, _, e ->
             onResult(resultCode, e)
         }
     }

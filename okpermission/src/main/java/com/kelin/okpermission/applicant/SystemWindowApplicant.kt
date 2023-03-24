@@ -67,7 +67,7 @@ class SystemWindowApplicant(activity: Activity, router: PermissionRouter) : Perm
         permissions: Array<out Permission>,
         onResult: (permissions: Array<out Permission>) -> Unit
     ) {
-        OkActivityResult.startActivity(
+        OkActivityResult.startActivityForCode(
             activity,
             intentGenerator.generatorIntent(activity)
         ) {
