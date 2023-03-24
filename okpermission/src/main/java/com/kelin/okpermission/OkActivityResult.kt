@@ -26,8 +26,33 @@ import java.lang.ClassCastException
 object OkActivityResult {
 
     private const val ROUTER_TAG = "ok_permission_activity_result_router_tag"
-    const val KEY_RESULT_DATA = "ok_permission_activity_result_data"
+    private const val KEY_RESULT_DATA = "ok_permission_activity_result_data"
 
+    fun <D> startActivity(
+        activity: Activity,
+        clazz: Class<out Activity>,
+        options: Bundle? = null,
+        onResult: (data: D?) -> Unit
+    ) {
+        startActivity(activity, Intent(activity, clazz), options, onResult)
+    }
+
+    fun <D> startActivity(
+        activity: Activity,
+        intent: Intent,
+        options: Bundle? = null,
+        onResult: (data: D?) -> Unit
+    ) {
+        startActivityOrException<D>(activity, intent, options) { _, data, e ->
+            if (e == null) {
+                onResult(data)
+            } else {
+                Log.e("OkActivityResult", "The activity not fount! \n${e.message}")
+                e.printStackTrace()
+                onResult(null)
+            }
+        }
+    }
     fun <D> startActivity(
         activity: Activity,
         clazz: Class<out Activity>,
@@ -54,16 +79,16 @@ object OkActivityResult {
         }
     }
 
-    fun startActivity(
+    fun startActivityForCode(
         activity: Activity,
         clazz: Class<out Activity>,
         options: Bundle? = null,
         onResult: (resultCode: Int) -> Unit
     ) {
-        startActivity(activity, Intent(activity, clazz), options, onResult)
+        startActivityForCode(activity, Intent(activity, clazz), options, onResult)
     }
 
-    fun startActivity(
+    fun startActivityForCode(
         activity: Activity,
         intent: Intent,
         options: Bundle? = null,
