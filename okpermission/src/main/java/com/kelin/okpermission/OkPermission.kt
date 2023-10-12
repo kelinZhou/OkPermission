@@ -49,7 +49,7 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
         /**
          * 使用相机拍照的权限组。
          */
-        val CAMERA_FOR_PICTURE_OR__VIDEO by lazy {
+        val CAMERA_FOR_PICTURE_OR_VIDEO by lazy {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.CAMERA)
             } else {
