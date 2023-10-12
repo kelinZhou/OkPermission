@@ -6,7 +6,7 @@ apply plugin: 'kotlin-android-extensions'
 
 android {
     compileSdkVersion 33
-    buildToolsVersion '33.0.1'
+    buildToolsVersion '31.0.0'
     defaultConfig {
         applicationId "com.kelin.okpermissiondemo"
         minSdkVersion 14
