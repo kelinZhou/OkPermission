@@ -19,12 +19,13 @@ class MainActivity : AppCompatActivity() {
         return super.onCreateOptionsMenu(menu)
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        return when (item?.itemId) {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
             R.id.menuGoToAppDetail -> {
                 OkPermission.gotoPermissionSettingPage(this)
                 true
             }
+
             R.id.menuGoToApkInstall -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     OkPermission.gotoInstallPermissionPage(this)
@@ -33,22 +34,27 @@ class MainActivity : AppCompatActivity() {
                 }
                 true
             }
+
             R.id.menuGoToNotification -> {
                 OkPermission.gotoNotificationPermissionPage(this)
                 true
             }
+
             R.id.menuGoToSystemWindow -> {
                 OkPermission.gotoSystemWindowPermissionPage(this)
                 true
             }
+
             R.id.menuGoToModifySettings -> {
                 OkPermission.gotoWriteSettingsPage(this)
                 true
             }
+
             R.id.menuGoToGPSSettings -> {
                 OkPermission.gotoGPSSettingsPage(this)
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -57,16 +63,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        tv0.setOnClickListener {
-            OkPermission.with(this)
-                .checkAndApply { granted, permissions ->
-                    if (granted) {
-                        Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(this, "未获取全部权限", Toast.LENGTH_SHORT).show()
-                    }
-                }
-        }
         tv1.setOnClickListener {
             OkPermission.with(this)
                 .addDefaultPermissions(
@@ -82,11 +78,11 @@ class MainActivity : AppCompatActivity() {
         }
 
 //        tv2.setOnClickListener {
-//            OkPermission.with(this).applyPermissions(
+//            OkPermission.with(this).addDefaultPermissions(
 //                Manifest.permission.CALL_PHONE,
 //                Manifest.permission.CAMERA
-//            ) { permissions ->
-//                if (permissions.isEmpty()) {
+//            ).checkAndApply { granted, _ ->
+//                if (granted) {
 //                    Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
 //                } else {
 //                    Toast.makeText(this, "未获取全部权限", Toast.LENGTH_SHORT).show()
@@ -230,10 +226,10 @@ class MainActivity : AppCompatActivity() {
                 AlertDialog.Builder(this)
                     .setTitle("提示：")
                     .setMessage("需要打开系统定位开关，用于定位服务。")
-                    .setNegativeButton("暂不开启"){ dialog, which ->
+                    .setNegativeButton("暂不开启") { dialog, which ->
                         dialog.dismiss()
                     }
-                    .setPositiveButton("去设置"){dialog, which ->
+                    .setPositiveButton("去设置") { dialog, which ->
                         dialog.dismiss()
                         OkPermission.with(this)
                             .addDefaultPermissions(OkPermission.permission.GPS)

@@ -20,7 +20,7 @@ class LSSettingsIntentGenerator(permission: Permission?) : SettingIntentGenerato
     override fun onGeneratorDangerousIntent(context: Context): Intent {
         val intent = Intent()
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        intent.putExtra("packageName", BuildConfig.APPLICATION_ID)
+        intent.putExtra("packageName", context.packageName)
         intent.component = ComponentName("com.android.packageinstaller", "com.android.packageinstaller.permission.ui.ManagePermissionsActivity")
         return intent
     }

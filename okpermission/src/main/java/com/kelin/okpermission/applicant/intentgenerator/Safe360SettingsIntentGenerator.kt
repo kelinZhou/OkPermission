@@ -20,7 +20,7 @@ class Safe360SettingsIntentGenerator(permission: Permission?) : SettingIntentGen
     override fun onGeneratorDangerousIntent(context: Context): Intent {
         val intent = Intent("android.intent.action.MAIN")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        intent.putExtra("packageName", BuildConfig.APPLICATION_ID)
+        intent.putExtra("packageName", context.packageName)
         intent.component = ComponentName("com.qihoo360.mobilesafe", "com.qihoo360.mobilesafe.ui.index.AppEnterActivity")
         return intent
     }

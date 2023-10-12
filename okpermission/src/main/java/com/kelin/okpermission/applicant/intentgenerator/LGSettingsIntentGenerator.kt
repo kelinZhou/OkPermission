@@ -3,7 +3,6 @@ package com.kelin.okpermission.applicant.intentgenerator
 import android.content.Context
 import android.content.Intent
 import android.content.ComponentName
-import com.kelin.okpermission.BuildConfig
 import com.kelin.okpermission.permission.Permission
 
 
@@ -20,7 +19,7 @@ class LGSettingsIntentGenerator(permission: Permission?) : SettingIntentGenerato
     override fun onGeneratorDangerousIntent(context: Context): Intent {
         val intent = Intent("android.intent.action.MAIN")
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        intent.putExtra("packageName", BuildConfig.APPLICATION_ID)
+        intent.putExtra("packageName", context.packageName)
         intent.component = ComponentName("com.android.settings", "com.android.settings.Settings\$AccessLockSummaryActivity")
         return intent
     }

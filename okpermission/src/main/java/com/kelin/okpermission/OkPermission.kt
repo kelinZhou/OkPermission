@@ -35,7 +35,9 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
          * 外部存储读写权限组。
          */
         val EXTERNAL_STORAGE by lazy {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                emptyArray()
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                 arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE)
             } else {
                 arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -45,15 +47,12 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
         /**
          * 使用相机拍照的权限组。
          */
-        val CAMERA_FOR_PICTURE by lazy {
-            arrayOf(*EXTERNAL_STORAGE, Manifest.permission.CAMERA)
-        }
-
-        /**
-         * 使用相机录像的权限组。
-         */
-        val CAMERA_FOR_VIDEO by lazy {
-            arrayOf(*CAMERA_FOR_PICTURE, Manifest.permission.RECORD_AUDIO)
+        val CAMERA_FOR_PICTURE_OR__VIDEO by lazy {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.CAMERA)
+            } else {
+                arrayOf(*EXTERNAL_STORAGE, Manifest.permission.CAMERA)
+            }
         }
 
         /**
@@ -179,13 +178,9 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
             val unregisteredPermissions = permissions.filter { !registeredPermissions.contains(it) && !it.startsWith("kelin.permission") }.toMutableList()
             if (unregisteredPermissions.isNotEmpty()) {
                 throw IllegalStateException(
-                    if (unregisteredPermissions.isNotEmpty()) {
-                        "There are some permissions aren't registered in the manifest file! The following:\n${
-                            unregisteredPermissions.joinToString("\n")
-                        }"
-                    } else {
-                        ""
-                    }
+                    "There are some permissions aren't registered in the manifest file! The following:\n${
+                        unregisteredPermissions.joinToString("\n")
+                    }"
                 )
             }
         }
@@ -217,12 +212,15 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
                 is Activity -> {
                     target
                 }
+
                 is Fragment -> {
                     target.requireActivity()
                 }
+
                 is android.app.Fragment -> {
                     target.activity
                 }
+
                 else -> {
                     throw NullPointerException("The target must be Activity or Fragment!!!")
                 }
@@ -395,9 +393,10 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
         val activity = context
         return if (activity != null) {
             if (needPermissions.isEmpty()) {
-                needPermissions.addAll(getManifestPermissions(activity).map { Permission.createDefault(it, false) })
+                emptyArray()
+            } else {
+                createApplicantManager()?.startCheck() ?: emptyArray()
             }
-            createApplicantManager()?.startCheck() ?: emptyArray()
         } else {
             needPermissions.map { it.permission }.toTypedArray()
         }
@@ -431,9 +430,10 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
         val activity = context
         if (activity != null) {
             if (needPermissions.isEmpty()) {
-                needPermissions.addAll(getManifestPermissions(activity).map { Permission.createDefault(it, false) })
+                onApplyFinished(true, emptyArray())
+            } else {
+                createApplicantManager()?.startApply(onApplyFinished)
             }
-            createApplicantManager()?.startApply(onApplyFinished)
         }
     }
 
@@ -449,18 +449,23 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
                         Manifest.permission.REQUEST_INSTALL_PACKAGES -> {
                             ApkInstallApplicant::class.java
                         }
+
                         Manifest.permission.SYSTEM_ALERT_WINDOW -> {
                             SystemWindowApplicant::class.java
                         }
+
                         permission.NOTIFICATION -> {
                             NotificationApplicant::class.java
                         }
+
                         Manifest.permission.WRITE_SETTINGS -> {
                             WriteSettingsApplicant::class.java
                         }
+
                         permission.GPS -> {
                             GPSApplicant::class.java
                         }
+
                         else -> {
                             DefaultApplicant::class.java
                         }

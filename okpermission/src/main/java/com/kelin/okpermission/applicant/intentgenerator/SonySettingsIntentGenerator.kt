@@ -20,7 +20,7 @@ class SonySettingsIntentGenerator(permission: Permission?) : SettingIntentGenera
     override fun onGeneratorDangerousIntent(context: Context): Intent {
         val intent = Intent()
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        intent.putExtra("packageName", BuildConfig.APPLICATION_ID)
+        intent.putExtra("packageName", context.packageName)
         intent.component = ComponentName("com.sonymobile.cta", "com.sonymobile.cta.SomcCTAMainActivity")
         return intent
     }
