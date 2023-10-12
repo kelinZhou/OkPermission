@@ -1,4 +1,4 @@
-# OkPermission
+# OkPermission [![](https://jitpack.io/v/kelinZhou/OkPermission.svg)](https://jitpack.io/#kelinZhou/OkPermission)
 #### 实现Android6.0动态权限的优雅获取，一行代码即可实现动态权限的获取。
 
 * * *
@@ -12,6 +12,18 @@
 ![DemoApk](materials/demo_download.png)
 
 ## 更新
+
+#### 3.3.4 增加权限使用说明弹窗。
+    1.onReslult回调的result处理逻辑。
+
+#### 3.3.3 增加权限使用说明弹窗。
+    1.优化startActivity接口。
+
+#### 3.3.1 增加权限使用说明弹窗。
+   
+#### 3.3.0 修复使用时偶现Bug。
+   1. 修复使用时在Fragment中使用Activity创建OkPermission会出现IllegalStateException: FragmentManager is already executing transactions的Bug。
+   2. 优化代码逻辑，提升性能增加健壮性、稳定性。
 
 #### 3.2.2 修复使用时偶现Bug。
    修复使用时偶现IllegalStateException: FragmentManager is already executing transactions的Bug。

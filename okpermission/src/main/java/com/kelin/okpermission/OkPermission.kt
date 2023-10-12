@@ -7,9 +7,11 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import com.kelin.okpermission.applicant.*
 import com.kelin.okpermission.applicant.intentgenerator.*
 import com.kelin.okpermission.permission.Permission
+import com.kelin.okpermission.router.PermissionRouter
 import java.lang.ref.WeakReference
 import java.util.*
 import kotlin.collections.ArrayList
@@ -235,6 +237,14 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
      */
     private var checkPermissionTypeInterceptor: MakeApplicantInterceptor? = null
 
+    /**
+     * 权限用途说明弹窗。
+     */
+    private var permissionApplicationDialogInterceptor: ((permissions: Collection<Permission>, renewable: Renewable) -> Unit)? = null
+
+    /**
+     * 缺少权限提示弹窗。
+     */
     private var missingPermissionDialogInterceptor: ((renewable: Renewable) -> Unit)? = null
     private var settingsIntentGeneratorInterceptor: ((permission: Permission) -> SettingIntentGenerator?)? = null
 
@@ -411,6 +421,14 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
     }
 
     /**
+     *  设置申请权限的权限说明弹窗，由自己实现弹窗。该方法必须要在apply等相关申请权限的方法前调用。
+     */
+    fun setPermissionApplicationDialog(interceptor: (permissions: Collection<Permission>, renewable: Renewable) -> Unit): OkPermission {
+        permissionApplicationDialogInterceptor = interceptor
+        return this
+    }
+
+    /**
      * 拦截设置页面Intent生产器，由自己实现指定页面的跳转。该方法必须要在apply等相关申请权限的方法前调用。
      */
     fun interceptSettingsIntentGenerator(interceptor: (permission: Permission) -> SettingIntentGenerator?): OkPermission {
@@ -441,6 +459,7 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
         val target = target
         return if (target != null) {
             val applicants = HashMap<Class<out PermissionsApplicant>, PermissionsApplicant>()
+            val router = getRouter(target)
             needPermissions.forEach {
                 val applicantClass = if (checkPermissionTypeInterceptor?.interceptMake(it) == true) {
                     checkPermissionTypeInterceptor!!.makeApplicant(it)
@@ -473,7 +492,7 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
                 }
                 val a = applicants[applicantClass]
                 if (a == null) {
-                    val applicant = applicantClass.getConstructor(Any::class.java).newInstance(target)
+                    val applicant = applicantClass.getConstructor(Activity::class.java, PermissionRouter::class.java).newInstance(getActivityByTarget(target), router)
                     applicant.intentGenerator = settingsIntentGeneratorInterceptor?.invoke(it) ?: createSettingIntentGenerator(it)
                     applicant.addPermission(it)
                     applicant.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
@@ -483,9 +502,27 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
                     a.missingPermissionDialogInterceptor = missingPermissionDialogInterceptor
                 }
             }
-            ApplicantManager(applicants.values)
+            ApplicantManager(router, applicants.values, permissionApplicationDialogInterceptor)
         } else {
             null
+        }
+    }
+
+    private fun getRouter(target: Any): PermissionRouter {
+        return when (target) {
+            is FragmentActivity -> target.supportFragmentManager.fragments.firstOrNull()?.let { fragment ->
+                PermissionRouter.getAndroidxRouter(target.supportFragmentManager, fragment.childFragmentManager)
+            } ?: PermissionRouter.getAndroidxRouter(target.supportFragmentManager)
+            is Activity -> PermissionRouter.getAppRouter(target.fragmentManager)
+            is Fragment -> PermissionRouter.getAndroidxRouter(target.childFragmentManager)
+            is android.app.Fragment -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                PermissionRouter.getAppRouter(target.childFragmentManager)
+            } else {
+                PermissionRouter.getAppRouter(target.fragmentManager)
+            }
+            else -> {
+                throw NullPointerException("The target must be Activity or Fragment!!!")
+            }
         }
     }
 

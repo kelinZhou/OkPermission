@@ -13,7 +13,7 @@ import kotlin.random.Random
  *
  * **版本:** v 1.0.0
  */
-abstract class BasicRouter : Fragment() {
+abstract class AppBasicRouter : Fragment() {
 
     protected val randomGenerator = Random(System.currentTimeMillis())
 

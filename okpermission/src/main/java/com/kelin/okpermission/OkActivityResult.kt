@@ -9,8 +9,8 @@ import android.util.Log
 import android.util.SparseArray
 import androidx.fragment.app.FragmentActivity
 import com.kelin.okpermission.router.ActivityResultRouter
-import com.kelin.okpermission.router.BasicRouter
-import com.kelin.okpermission.router.SupportBasicRouter
+import com.kelin.okpermission.router.AppBasicRouter
+import com.kelin.okpermission.router.AndroidxBasicRouter
 import java.io.Serializable
 import java.lang.ClassCastException
 
@@ -26,13 +26,13 @@ import java.lang.ClassCastException
 object OkActivityResult {
 
     private const val ROUTER_TAG = "ok_permission_activity_result_router_tag"
-    const val KEY_RESULT_DATA = "ok_permission_activity_result_data"
+    private const val KEY_RESULT_DATA = "ok_permission_activity_result_data"
 
     fun <D> startActivity(
         activity: Activity,
         clazz: Class<out Activity>,
         options: Bundle? = null,
-        onResult: (resultCode: Int, data: D?) -> Unit
+        onResult: (data: D?) -> Unit
     ) {
         startActivity(activity, Intent(activity, clazz), options, onResult)
     }
@@ -41,35 +41,35 @@ object OkActivityResult {
         activity: Activity,
         intent: Intent,
         options: Bundle? = null,
-        onResult: (resultCode: Int, data: D?) -> Unit
+        onResult: (data: D?) -> Unit
     ) {
-        startActivityOrException<D>(activity, intent, options) { resultCode, data, e ->
+        startActivityOrException<D>(activity, intent, options) { data, e ->
             if (e == null) {
-                onResult(resultCode, data)
+                onResult(data)
             } else {
                 Log.e("OkActivityResult", "The activity not fount! \n${e.message}")
                 e.printStackTrace()
-                onResult(Activity.RESULT_CANCELED, null)
+                onResult(null)
             }
         }
     }
 
-    fun startActivity(
+    fun startActivityForCode(
         activity: Activity,
         clazz: Class<out Activity>,
         options: Bundle? = null,
         onResult: (resultCode: Int) -> Unit
     ) {
-        startActivity(activity, Intent(activity, clazz), options, onResult)
+        startActivityForCode(activity, Intent(activity, clazz), options, onResult)
     }
 
-    fun startActivity(
+    fun startActivityForCode(
         activity: Activity,
         intent: Intent,
         options: Bundle? = null,
         onResult: (resultCode: Int) -> Unit
     ) {
-        startActivityOrException<Long>(activity, intent, options) { resultCode, d, e ->
+        startActivityForCodeOrException(activity, intent, options) { resultCode, e ->
             if (e == null) {
                 onResult(resultCode)
             } else {
@@ -84,7 +84,7 @@ object OkActivityResult {
         activity: Activity,
         clazz: Class<out Activity>,
         options: Bundle? = null,
-        onResult: (resultCode: Int, data: D?, e: Exception?) -> Unit
+        onResult: (data: D?, e: Exception?) -> Unit
     ) {
         startActivityOrException(activity, Intent(activity, clazz), options, onResult)
     }
@@ -93,27 +93,29 @@ object OkActivityResult {
         context: Activity,
         intent: Intent,
         options: Bundle? = null,
-        onResult: (resultCode: Int, data: D?, e: Exception?) -> Unit
+        onResult: (data: D?, e: Exception?) -> Unit
     ) {
-        getRouter<D>(context).startActivityForResult(intent, options, onResult)
+        getRouter<D>(context).startActivityForResult(intent, options){ _, data, e ->
+            onResult(data, e)
+        }
     }
 
-    fun startActivityOrException(
+    fun startActivityForCodeOrException(
         activity: Activity,
         clazz: Class<out Activity>,
         options: Bundle? = null,
         onResult: (resultCode: Int, e: Exception?) -> Unit
     ) {
-        startActivityOrException(activity, Intent(activity, clazz), options, onResult)
+        startActivityForCodeOrException(activity, Intent(activity, clazz), options, onResult)
     }
 
-    fun startActivityOrException(
+    fun startActivityForCodeOrException(
         context: Activity,
         intent: Intent,
         options: Bundle? = null,
         onResult: (resultCode: Int, e: Exception?) -> Unit
     ) {
-        getRouter<Any>(context).startActivityForResult(intent, options) { resultCode, data, e ->
+        getRouter<Any>(context).startActivityForResult(intent, options) { resultCode, _, e ->
             onResult(resultCode, e)
         }
     }
@@ -360,7 +362,7 @@ object OkActivityResult {
     private fun <D> createRouter(activity: Activity): ActivityResultRouter<D> {
         val router: ActivityResultRouter<D>
         if (activity is FragmentActivity) {
-            router = SupportActivityResultRouterImpl()
+            router = AndroidxActivityResultRouterImpl()
             val fm = activity.supportFragmentManager
             fm.beginTransaction()
                 .add(router, ROUTER_TAG)
@@ -371,7 +373,7 @@ object OkActivityResult {
                 e.printStackTrace()
             }
         } else {
-            router = ActivityResultRouterImpl()
+            router = AppActivityResultRouterImpl()
             val fm = activity.fragmentManager
             fm.beginTransaction()
                 .add(router, ROUTER_TAG)
@@ -402,7 +404,7 @@ object OkActivityResult {
         }
     }
 
-    internal class ActivityResultRouterImpl<D> : BasicRouter(), ActivityResultRouter<D> {
+    internal class AppActivityResultRouterImpl<D> : AppBasicRouter(), ActivityResultRouter<D> {
 
         private val resultCallbackCache = SparseArray<(resultCode: Int, data: D?, e: Exception?) -> Unit>()
 
@@ -429,9 +431,13 @@ object OkActivityResult {
             val callback = resultCallbackCache[requestCode]
             resultCallbackCache.remove(requestCode)
             try {
-                callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
+                if (resultCode == Activity.RESULT_OK) {
+                    callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
+                } else {
+                    callback?.invoke(resultCode, null, null)
+                }
             } catch (e: ClassCastException) {
-                callback?.invoke(resultCode, null, null)
+                callback?.invoke(resultCode, null, e)
             }
         }
 
@@ -453,7 +459,7 @@ object OkActivityResult {
         }
     }
 
-    internal class SupportActivityResultRouterImpl<D> : SupportBasicRouter(), ActivityResultRouter<D> {
+    internal class AndroidxActivityResultRouterImpl<D> : AndroidxBasicRouter(), ActivityResultRouter<D> {
 
         private val resultCallbackCache = SparseArray<(resultCode: Int, data: D?, e: Exception?) -> Unit>()
 
@@ -476,9 +482,13 @@ object OkActivityResult {
             val callback = resultCallbackCache[requestCode]
             resultCallbackCache.remove(requestCode)
             try {
-                callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
+                if (resultCode == Activity.RESULT_OK) {
+                    callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
+                } else {
+                    callback?.invoke(resultCode, null, null)
+                }
             } catch (e: ClassCastException) {
-                callback?.invoke(resultCode, null, null)
+                callback?.invoke(resultCode, null, e)
             }
         }
 

@@ -165,6 +165,32 @@ class MainActivity : AppCompatActivity() {
                 }
         }
 
+        tv12.setOnClickListener {
+            OkPermission.with(this)
+                .addDefaultPermissions(
+                    Manifest.permission.CALL_PHONE,
+                    Manifest.permission.CAMERA
+                )
+                .setPermissionApplicationDialog { permissions, renewable ->
+                    AlertDialog.Builder(this)
+                        .setCancelable(false)
+                        .setTitle("提示")
+                        .setMessage("当前操作需要您授权电话权限和相机权限")
+                        .setNegativeButton("退出") { _, _ ->
+                            renewable.continueWorking(false)
+                        }
+                        .setPositiveButton("确定") { _, _ ->
+                            renewable.continueWorking(true)
+                        }.show()
+                }.checkAndApply { granted, permissions ->
+                    if (permissions.isEmpty()) {
+                        Toast.makeText(this, "权限已全部获取", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "未获取全部权限", Toast.LENGTH_SHORT).show()
+                    }
+                }
+        }
+
         tv7.setOnClickListener {
             OkPermission.with(this)
                 .addDefaultPermissions(Manifest.permission.REQUEST_INSTALL_PACKAGES)
