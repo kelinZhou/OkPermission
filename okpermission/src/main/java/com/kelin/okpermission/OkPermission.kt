@@ -450,7 +450,7 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
             if (needPermissions.isEmpty()) {
                 onApplyFinished(true, emptyArray())
             } else {
-                createApplicantManager()?.startApply(onApplyFinished)
+                createApplicantManager()?.startApply(true, onApplyFinished)
             }
         }
     }
