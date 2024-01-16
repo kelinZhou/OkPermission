@@ -67,7 +67,7 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
 
     companion object {
 
-        private val BRAND = Build.MANUFACTURER.toLowerCase(Locale.CHINA)
+        private val BRAND = Build.MANUFACTURER.lowercase(Locale.CHINA)
 
         /**
          * 创建OkPermission并依附于Activity。

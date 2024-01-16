@@ -1,19 +1,14 @@
 apply plugin: 'com.android.library'
-apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-android'
-apply plugin: 'com.github.dcendents.android-maven'
 group = 'com.github.kelinZhou'
 
 android {
-    compileSdkVersion 33
-    buildToolsVersion '29.0.3'
+    compileSdk 33
 
 
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 33
-        versionCode 1
-        versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -26,49 +21,51 @@ android {
         }
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    namespace 'com.kelin.okpermission'
+
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.appcompat:appcompat:1.6.1'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
     lintChecks project(':lint') //这里添加java library
 }
-repositories {
-    mavenCentral()
-}
-
 
 // 指定编码
 tasks.withType(JavaCompile).configureEach {
     options.encoding = "UTF-8"
 }
-
-// 打包源码
-tasks.register('sourcesJar', Jar) {
-    from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
-}
-
-tasks.register('javadoc', Javadoc) {
-    failOnError false
-    source = android.sourceSets.main.java.sourceFiles
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-    classpath += configurations.compile
-}
-
-// 制作文档(Javadoc)
-tasks.register('javadocJar', Jar) {
-    dependsOn javadoc
-    classifier = 'javadoc'
-    from javadoc.getDestinationDir()
-}
-
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}
+//
+//// 打包源码
+//tasks.register('sourcesJar', Jar) {
+//    from android.sourceSets.main.java.srcDirs
+//    classifier = 'sources'
+//}
+//
+//tasks.register('javadoc', Javadoc) {
+//    failOnError false
+//    source = android.sourceSets.main.java.sourceFiles
+//    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+//    classpath += configurations.compile
+//}
+//
+//// 制作文档(Javadoc)
+//tasks.register('javadocJar', Jar) {
+//    dependsOn javadoc
+//    classifier = 'javadoc'
+//    from javadoc.getDestinationDir()
+//}
+//
+//artifacts {
+//    archives sourcesJar
+//    archives javadocJar
+//}
