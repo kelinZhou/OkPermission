@@ -260,7 +260,35 @@ class MainActivity : AppCompatActivity() {
                             dialog.dismiss()
                             OkPermission.with(this@MainActivity)
                                 .addDefaultPermissions(OkPermission.permission.GPS)
-                                .checkAndApplyOnly()
+                                .checkAndApply { granted, _ ->
+                                    if (granted) {
+                                        OkPermission.with(this@MainActivity)
+                                            .addDefaultPermissions(*OkPermission.permission_group.ACCESS_LOCATION)
+                                            .setPermissionApplicationDialog { permissions, renewable ->
+                                                AlertDialog.Builder(this@MainActivity)
+                                                    .setTitle("提示：")
+                                                    .setMessage("需要打开系统定位开关，用于定位服务。")
+                                                    .setNegativeButton("暂不开启") { dialog, which ->
+                                                        dialog.dismiss()
+                                                        renewable.continueWorking(false)
+                                                    }
+                                                    .setPositiveButton("开启"){dialog, which ->
+                                                        dialog.dismiss()
+                                                        renewable.continueWorking(true)
+                                                    }
+                                                    .show()
+                                            }
+                                            .checkAndApply { granted2, _ ->
+                                                if (granted2) {
+                                                    Toast.makeText(this@MainActivity, "定位权限已开启", Toast.LENGTH_SHORT).show()
+                                                } else {
+                                                    Toast.makeText(this@MainActivity, "定位权限已禁用", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                    } else {
+                                        Toast.makeText(this@MainActivity, "定位服务开启失败", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
                         }.show()
                 }
             }

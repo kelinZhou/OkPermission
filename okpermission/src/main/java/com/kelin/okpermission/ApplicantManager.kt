@@ -37,6 +37,7 @@ internal class ApplicantManager(private val router: PermissionRouter, private va
                 doStartApply(listener)
             }
         } else {
+            router.recycle()
             var isGranted = true
             val deniedPermissions = ArrayList<Permission>()
             appliedApplicant.forEach {
@@ -48,7 +49,6 @@ internal class ApplicantManager(private val router: PermissionRouter, private va
                 }
             }
             listener(isGranted, deniedPermissions.map { it.permission }.toTypedArray())
-            router.recycle()
         }
     }
 
