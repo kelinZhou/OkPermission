@@ -3,6 +3,7 @@ package com.kelin.okpermission.applicant
 import android.app.Activity
 import android.content.Context
 import android.location.LocationManager
+import android.os.Build
 import com.kelin.okpermission.OkActivityResult
 import com.kelin.okpermission.permission.Permission
 import com.kelin.okpermission.router.PermissionRouter
@@ -23,7 +24,11 @@ class GPSApplicant(activity: Activity, router: PermissionRouter) : PermissionsAp
 
     private fun isGPSEnable(): Boolean {
         return (applicationContext.getSystemService(Context.LOCATION_SERVICE) as? LocationManager)?.let { lm ->
-            lm.isProviderEnabled(LocationManager.GPS_PROVIDER) || lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                lm.isLocationEnabled
+            } else {
+                lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            }
         } ?: false
     }
 
