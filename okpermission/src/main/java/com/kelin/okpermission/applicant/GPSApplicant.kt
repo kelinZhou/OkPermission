@@ -6,6 +6,7 @@ import android.location.LocationManager
 import android.os.Build
 import com.kelin.okpermission.OkActivityResult
 import com.kelin.okpermission.permission.Permission
+import com.kelin.okpermission.permission.PermissionsCallback
 import com.kelin.okpermission.router.PermissionRouter
 
 /**
@@ -36,8 +37,8 @@ class GPSApplicant(activity: Activity, router: PermissionRouter) : PermissionsAp
         return true
     }
 
-    override fun requestPermissions(router: PermissionRouter, permissions: Array<out Permission>, onResult: (permissions: Array<out Permission>) -> Unit) {
-        OkActivityResult.startActivityForCodeOrException(activity, intentGenerator.generatorIntent(activity)) { _, e ->
+    override fun requestPermissions(router: PermissionRouter, permissions: Array<out Permission>, onResult: PermissionsCallback) {
+        OkActivityResult.startActivityForCodeOrException(activity, intentGenerator.generatorIntent(activity)) { _, _ ->
             if (isGPSEnable()) {
                 onResult(emptyArray())
             } else {

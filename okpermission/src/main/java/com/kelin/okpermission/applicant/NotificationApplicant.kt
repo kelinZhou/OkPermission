@@ -7,6 +7,7 @@ import android.os.Build
 import androidx.core.app.NotificationManagerCompat
 import com.kelin.okpermission.OkActivityResult
 import com.kelin.okpermission.permission.Permission
+import com.kelin.okpermission.permission.PermissionsCallback
 import com.kelin.okpermission.router.PermissionRouter
 
 /**
@@ -50,7 +51,7 @@ class NotificationApplicant(activity: Activity, router: PermissionRouter) : Perm
     override fun requestPermissions(
         router: PermissionRouter,
         permissions: Array<out Permission>,
-        onResult: (permissions: Array<out Permission>) -> Unit
+        onResult: PermissionsCallback
     ) {
         if (areNotificationsEnabled()) {
             onRequestChannels(permissions, router, onResult)
@@ -75,7 +76,7 @@ class NotificationApplicant(activity: Activity, router: PermissionRouter) : Perm
     private fun onRequestChannels(
         permissions: Array<out Permission>,
         router: PermissionRouter,
-        onResult: (permissions: Array<out Permission>) -> Unit
+        onResult: PermissionsCallback
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channels = permissions.filter {
@@ -115,7 +116,7 @@ class NotificationApplicant(activity: Activity, router: PermissionRouter) : Perm
         permissions: Array<out Permission.NotificationPermission>,
         deniedPermissions: MutableList<Permission.NotificationPermission>,
         index: Int,
-        onResult: (permissions: Array<out Permission>) -> Unit
+        onResult: PermissionsCallback
     ) {
         val curPermission = permissions[index]
         OkActivityResult.startActivityForCodeOrException(
@@ -141,7 +142,7 @@ class NotificationApplicant(activity: Activity, router: PermissionRouter) : Perm
     }
 
     private fun applyTryAgain(
-        onResult: (permissions: Array<out Permission>) -> Unit,
+        onResult: PermissionsCallback,
         permissions: Array<out Permission>
     ) {
         OkActivityResult.startActivityForCodeOrException(

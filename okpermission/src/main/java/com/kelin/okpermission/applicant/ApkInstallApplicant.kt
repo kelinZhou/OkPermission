@@ -4,6 +4,7 @@ import android.app.Activity
 import android.os.Build
 import com.kelin.okpermission.OkActivityResult
 import com.kelin.okpermission.permission.Permission
+import com.kelin.okpermission.permission.PermissionsCallback
 import com.kelin.okpermission.router.PermissionRouter
 
 /**
@@ -31,7 +32,7 @@ class ApkInstallApplicant(activity: Activity, router: PermissionRouter) : Permis
     override fun requestPermissions(
         router: PermissionRouter,
         permissions: Array<out Permission>,
-        onResult: (permissions: Array<out Permission>) -> Unit
+        onResult: PermissionsCallback
     ) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             OkActivityResult.startActivityForCodeOrException(

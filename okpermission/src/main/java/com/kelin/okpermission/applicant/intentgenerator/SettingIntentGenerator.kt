@@ -1,9 +1,11 @@
 package com.kelin.okpermission.applicant.intentgenerator
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.PackageManager.PackageInfoFlags
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -37,7 +39,7 @@ abstract class SettingIntentGenerator(private val permission: Permission?) {
             onGeneratorApkInstallIntent(context)
         } else if (p == Manifest.permission.WRITE_SETTINGS && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             onGeneratorWriteSettingsIntent(context)
-        } else if (p == OkPermission.permission.GPS){
+        } else if (p == OkPermission.permission.GPS) {
             onGeneratorGPSIntent(context)
         } else {
             onGeneratorDangerousIntent(context)
@@ -50,10 +52,12 @@ abstract class SettingIntentGenerator(private val permission: Permission?) {
                 Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
                     data = Uri.parse("package:" + context.packageName)
                 }
+
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> //6.0以上
                 Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION).apply {
                     data = Uri.parse("package:" + context.packageName)
                 }
+
             else -> generatorAppDetailIntent(context)
         }
     }
@@ -98,21 +102,25 @@ abstract class SettingIntentGenerator(private val permission: Permission?) {
                     intent.putExtra(Settings.EXTRA_CHANNEL_ID, channel)
                 }
             }
+
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP -> {  //5.0
                 intent.action = "android.settings.APP_NOTIFICATION_SETTINGS"
                 intent.putExtra("app_package", context.packageName)
                 intent.putExtra("app_uid", context.applicationInfo.uid)
             }
+
             Build.VERSION.SDK_INT == Build.VERSION_CODES.KITKAT -> {  //4.4
                 intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
                 intent.addCategory(Intent.CATEGORY_DEFAULT)
                 intent.data = Uri.parse("package:" + context.packageName)
             }
+
             Build.VERSION.SDK_INT >= 15 -> {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
                 intent.data = Uri.parse("package:" + context.packageName)
             }
+
             else -> {
                 intent.action = Settings.ACTION_APPLICATION_DETAILS_SETTINGS
                 Uri.parse("package:" + context.packageName)
@@ -156,8 +164,13 @@ abstract class SettingIntentGenerator(private val permission: Permission?) {
     }
 
     companion object {
+        @SuppressLint("QueryPermissionsNeeded")
         fun checkIntentAvailable(context: Context, intent: Intent): Boolean {
-            return context.packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY).isNotEmpty()
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong())).isNotEmpty()
+            } else {
+                context.packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY).isNotEmpty()
+            }
         }
     }
 }

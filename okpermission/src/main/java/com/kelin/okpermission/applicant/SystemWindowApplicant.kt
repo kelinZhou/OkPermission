@@ -9,6 +9,7 @@ import android.provider.Settings
 import androidx.annotation.RequiresApi
 import com.kelin.okpermission.OkActivityResult
 import com.kelin.okpermission.permission.Permission
+import com.kelin.okpermission.permission.PermissionsCallback
 import com.kelin.okpermission.router.PermissionRouter
 
 /**
@@ -65,7 +66,7 @@ class SystemWindowApplicant(activity: Activity, router: PermissionRouter) : Perm
     override fun requestPermissions(
         router: PermissionRouter,
         permissions: Array<out Permission>,
-        onResult: (permissions: Array<out Permission>) -> Unit
+        onResult: PermissionsCallback
     ) {
         OkActivityResult.startActivityForCode(
             activity,

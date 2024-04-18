@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.kelin.okpermission.permission.Permission
+import com.kelin.okpermission.permission.PermissionsCallback
 import com.kelin.okpermission.router.PermissionRouter
 
 /**
@@ -34,7 +35,7 @@ class DefaultApplicant(activity: Activity, router: PermissionRouter) : Permissio
     override fun requestPermissions(
         router: PermissionRouter,
         permissions: Array<out Permission>,
-        onResult: (permissions: Array<out Permission>) -> Unit
+        onResult: PermissionsCallback
     ) {
         router.requestPermissions(permissions, onResult)
     }

@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
+import androidx.core.content.PackageManagerCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import com.kelin.okpermission.applicant.*
@@ -188,8 +190,13 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
         }
 
         private fun getManifestPermissions(context: Context): Array<out String> {
-            return context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS)
-                .requestedPermissions
+            return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(PackageManager.GET_PERMISSIONS.toLong()))
+                    .requestedPermissions
+            } else {
+                context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS)
+                    .requestedPermissions
+            }
         }
 
         private fun createSettingIntentGenerator(permission: Permission? = null): SettingIntentGenerator {
@@ -211,7 +218,7 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
 
         internal fun getActivityByTarget(target: Any): Activity {
             return when (target) {
-                is Activity -> {
+                is FragmentActivity -> {
                     target
                 }
 
@@ -219,12 +226,8 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
                     target.requireActivity()
                 }
 
-                is android.app.Fragment -> {
-                    target.activity
-                }
-
                 else -> {
-                    throw NullPointerException("The target must be Activity or Fragment!!!")
+                    throw NullPointerException("The target must be FragmentActivity or Fragment with androidx !!!")
                 }
             }
         }
@@ -513,15 +516,10 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
             is FragmentActivity -> target.supportFragmentManager.fragments.firstOrNull()?.let { fragment ->
                 PermissionRouter.getAndroidxRouter(target.supportFragmentManager, fragment.childFragmentManager)
             } ?: PermissionRouter.getAndroidxRouter(target.supportFragmentManager)
-            is Activity -> PermissionRouter.getAppRouter(target.fragmentManager)
+
             is Fragment -> PermissionRouter.getAndroidxRouter(target.childFragmentManager)
-            is android.app.Fragment -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                PermissionRouter.getAppRouter(target.childFragmentManager)
-            } else {
-                PermissionRouter.getAppRouter(target.fragmentManager)
-            }
             else -> {
-                throw NullPointerException("The target must be Activity or Fragment!!!")
+                throw NullPointerException("The target must be FragmentActivity or Fragment with androidx")
             }
         }
     }

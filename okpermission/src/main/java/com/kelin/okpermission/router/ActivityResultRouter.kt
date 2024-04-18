@@ -1,7 +1,8 @@
 package com.kelin.okpermission.router
 
 import android.content.Intent
-import android.os.Bundle
+import androidx.core.app.ActivityOptionsCompat
+import com.kelin.okpermission.permission.ActivityResultCallback
 
 /**
  * **描述:** startActivityForResult的路由。
@@ -14,5 +15,5 @@ import android.os.Bundle
  */
 interface ActivityResultRouter<D> {
 
-    fun startActivityForResult(intent: Intent, options:Bundle? = null, onResult: (resultCode: Int, data: D?, e: Exception?) -> Unit)
+    fun startActivityForResult(intent: Intent, options: ActivityOptionsCompat? = null, onResult: ActivityResultCallback<D>)
 }

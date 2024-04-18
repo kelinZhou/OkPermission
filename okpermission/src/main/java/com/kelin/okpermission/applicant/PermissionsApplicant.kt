@@ -8,6 +8,7 @@ import com.kelin.okpermission.Renewable
 import com.kelin.okpermission.applicant.intentgenerator.AppDetailIntentGenerator
 import com.kelin.okpermission.applicant.intentgenerator.SettingIntentGenerator
 import com.kelin.okpermission.permission.Permission
+import com.kelin.okpermission.permission.PermissionsCallback
 import com.kelin.okpermission.router.PermissionRouter
 
 /**
@@ -50,7 +51,7 @@ abstract class PermissionsApplicant(protected val activity: Activity, private va
     protected abstract fun requestPermissions(
         router: PermissionRouter,
         permissions: Array<out Permission>,
-        onResult: (permissions: Array<out Permission>) -> Unit
+        onResult: PermissionsCallback
     )
 
     internal fun addPermission(permission: Permission) {

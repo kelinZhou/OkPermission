@@ -2,17 +2,21 @@ package com.kelin.okpermission
 
 import android.app.Activity
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
 import android.util.Log
-import android.util.SparseArray
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.ActivityOptionsCompat
 import androidx.fragment.app.FragmentActivity
+import com.kelin.okpermission.permission.ActivityResultCodeECallback
+import com.kelin.okpermission.permission.ActivityResultDataECallback
+import com.kelin.okpermission.permission.ActivityResultCallback
+import com.kelin.okpermission.permission.ActivityResultCodeCallback
+import com.kelin.okpermission.permission.ActivityResultDataCallback
 import com.kelin.okpermission.router.ActivityResultRouter
-import com.kelin.okpermission.router.AppBasicRouter
 import com.kelin.okpermission.router.AndroidxBasicRouter
 import java.io.Serializable
-import java.lang.ClassCastException
 
 /**
  * **描述:** startActivityForResult的帮助工具。。
@@ -31,8 +35,8 @@ object OkActivityResult {
     fun <D> startActivity(
         activity: Activity,
         clazz: Class<out Activity>,
-        options: Bundle? = null,
-        onResult: (data: D?) -> Unit
+        options: ActivityOptionsCompat? = null,
+        onResult: ActivityResultDataCallback<D>
     ) {
         startActivity(activity, Intent(activity, clazz), options, onResult)
     }
@@ -40,8 +44,8 @@ object OkActivityResult {
     fun <D> startActivity(
         activity: Activity,
         intent: Intent,
-        options: Bundle? = null,
-        onResult: (data: D?) -> Unit
+        options: ActivityOptionsCompat? = null,
+        onResult: ActivityResultDataCallback<D>
     ) {
         startActivityOrException<D>(activity, intent, options) { data, e ->
             if (e == null) {
@@ -57,8 +61,8 @@ object OkActivityResult {
     fun startActivityForCode(
         activity: Activity,
         clazz: Class<out Activity>,
-        options: Bundle? = null,
-        onResult: (resultCode: Int) -> Unit
+        options: ActivityOptionsCompat? = null,
+        onResult: ActivityResultCodeCallback
     ) {
         startActivityForCode(activity, Intent(activity, clazz), options, onResult)
     }
@@ -66,8 +70,8 @@ object OkActivityResult {
     fun startActivityForCode(
         activity: Activity,
         intent: Intent,
-        options: Bundle? = null,
-        onResult: (resultCode: Int) -> Unit
+        options: ActivityOptionsCompat? = null,
+        onResult: ActivityResultCodeCallback
     ) {
         startActivityForCodeOrException(activity, intent, options) { resultCode, e ->
             if (e == null) {
@@ -83,8 +87,8 @@ object OkActivityResult {
     fun <D> startActivityOrException(
         activity: Activity,
         clazz: Class<out Activity>,
-        options: Bundle? = null,
-        onResult: (data: D?, e: Exception?) -> Unit
+        options: ActivityOptionsCompat? = null,
+        onResult: ActivityResultDataECallback<D>
     ) {
         startActivityOrException(activity, Intent(activity, clazz), options, onResult)
     }
@@ -92,10 +96,10 @@ object OkActivityResult {
     fun <D> startActivityOrException(
         context: Activity,
         intent: Intent,
-        options: Bundle? = null,
-        onResult: (data: D?, e: Exception?) -> Unit
+        options: ActivityOptionsCompat? = null,
+        onResult: ActivityResultDataECallback<D>
     ) {
-        getRouter<D>(context).startActivityForResult(intent, options){ _, data, e ->
+        getRouter<D>(context).startActivityForResult(intent, options) { _, data, e ->
             onResult(data, e)
         }
     }
@@ -103,8 +107,8 @@ object OkActivityResult {
     fun startActivityForCodeOrException(
         activity: Activity,
         clazz: Class<out Activity>,
-        options: Bundle? = null,
-        onResult: (resultCode: Int, e: Exception?) -> Unit
+        options: ActivityOptionsCompat? = null,
+        onResult: ActivityResultCodeECallback
     ) {
         startActivityForCodeOrException(activity, Intent(activity, clazz), options, onResult)
     }
@@ -112,8 +116,8 @@ object OkActivityResult {
     fun startActivityForCodeOrException(
         context: Activity,
         intent: Intent,
-        options: Bundle? = null,
-        onResult: (resultCode: Int, e: Exception?) -> Unit
+        options: ActivityOptionsCompat? = null,
+        onResult: ActivityResultCodeECallback
     ) {
         getRouter<Any>(context).startActivityForResult(intent, options) { resultCode, _, e ->
             onResult(resultCode, e)
@@ -373,16 +377,7 @@ object OkActivityResult {
                 e.printStackTrace()
             }
         } else {
-            router = AppActivityResultRouterImpl()
-            val fm = activity.fragmentManager
-            fm.beginTransaction()
-                .add(router, ROUTER_TAG)
-                .commitAllowingStateLoss()
-            try {
-                fm.executePendingTransactions()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            throw IllegalAccessException("You have to use the androidx.fragment.app.FragmentActivity to startActivity for result.")
         }
         return router
     }
@@ -404,109 +399,43 @@ object OkActivityResult {
         }
     }
 
-    internal class AppActivityResultRouterImpl<D> : AppBasicRouter(), ActivityResultRouter<D> {
-
-        private val resultCallbackCache = SparseArray<(resultCode: Int, data: D?, e: Exception?) -> Unit>()
-
-        override fun onCreate(savedInstanceState: Bundle?) {
-            super.onCreate(savedInstanceState)
-            retainInstance = true
-        }
-
-        override fun startActivityForResult(intent: Intent, options: Bundle?, onResult: (resultCode: Int, data: D?, e: Exception?) -> Unit) {
-            try {
-                val requestCode = generateRequestCode()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                    startActivityForResult(intent, requestCode, options)
-                } else {
-                    startActivityForResult(intent, requestCode)
-                }
-                resultCallbackCache.put(requestCode, onResult)
-            } catch (e: Exception) {
-                onResult(Activity.RESULT_CANCELED, null, e)
-            }
-        }
-
-        override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-            val callback = resultCallbackCache[requestCode]
-            resultCallbackCache.remove(requestCode)
-            try {
-                if (resultCode == Activity.RESULT_OK) {
-                    callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
-                } else {
-                    callback?.invoke(resultCode, null, null)
-                }
-            } catch (e: ClassCastException) {
-                callback?.invoke(resultCode, null, e)
-            }
-        }
-
-        override fun onDestroy() {
-            super.onDestroy()
-            resultCallbackCache.clear()
-        }
-
-        /**
-         * 生成一个code。
-         */
-        private fun generateRequestCode(): Int {
-            val code = randomGenerator.nextInt(0, 0x0001_0000)
-            return if (resultCallbackCache.indexOfKey(code) < 0) {
-                code
-            } else {
-                generateRequestCode()
-            }
-        }
-    }
-
     internal class AndroidxActivityResultRouterImpl<D> : AndroidxBasicRouter(), ActivityResultRouter<D> {
 
-        private val resultCallbackCache = SparseArray<(resultCode: Int, data: D?, e: Exception?) -> Unit>()
+        private lateinit var launcher: ActivityResultLauncher<Intent>
+
+        private var callback: ActivityResultCallback<D>? = null
 
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
             retainInstance = true
+            launcher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                val resultCode = result.resultCode
+                try {
+                    if (resultCode == Activity.RESULT_OK) {
+                        callback?.invoke(resultCode, result.data?.let { getResultData<D>(it) }, null)
+                    } else {
+                        callback?.invoke(resultCode, null, null)
+                    }
+                } catch (e: Exception) {
+                    callback?.invoke(resultCode, null, e)
+                } finally {
+                    callback = null
+                }
+            }
         }
 
-        override fun startActivityForResult(intent: Intent, options: Bundle?, onResult: (resultCode: Int, data: D?, e: Exception?) -> Unit) {
+        override fun startActivityForResult(intent: Intent, options: ActivityOptionsCompat?, onResult: ActivityResultCallback<D>) {
             try {
-                val requestCode = generateRequestCode()
-                startActivityForResult(intent, requestCode, options)
-                resultCallbackCache.put(requestCode, onResult)
+                callback = onResult
+                launcher.launch(intent, options)
             } catch (e: Exception) {
                 onResult(Activity.RESULT_CANCELED, null, e)
             }
         }
 
-        override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-            val callback = resultCallbackCache[requestCode]
-            resultCallbackCache.remove(requestCode)
-            try {
-                if (resultCode == Activity.RESULT_OK) {
-                    callback?.invoke(resultCode, data?.let { getResultData<D>(it) }, null)
-                } else {
-                    callback?.invoke(resultCode, null, null)
-                }
-            } catch (e: ClassCastException) {
-                callback?.invoke(resultCode, null, e)
-            }
-        }
-
         override fun onDestroy() {
             super.onDestroy()
-            resultCallbackCache.clear()
-        }
-
-        /**
-         * 生成一个code。
-         */
-        private fun generateRequestCode(): Int {
-            val code = randomGenerator.nextInt(0, 0x0001_0000)
-            return if (resultCallbackCache.indexOfKey(code) < 0) {
-                code
-            } else {
-                generateRequestCode()
-            }
+            launcher.unregister()
         }
     }
 }
