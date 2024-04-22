@@ -16,39 +16,44 @@
 
 ## 更新
 
-#### [3.3.8] - 2024-1-16
+### [3.3.9] - 2024-4-22
+#### Changed
+- 适配registerForActivityResult。
+- 仅支持FragmentActivity的子类和AndroidX中的Fragment。
 
-##### Fixed
+### [3.3.8] - 2024-1-16
+
+#### Fixed
 
 - 修复检测GPS开关开启状态不准确的Bug。
 - 修复因权限路由销毁时机不正确而导致的Bug:IllegalStateException: Fragment AndroidxPermissionRouter。
 
-#### 3.3.6 适配Android12的存储权限。
+### 3.3.6 适配Android12的存储权限。
 
-#### 3.3.4 增加权限使用说明弹窗。
+### 3.3.4 增加权限使用说明弹窗。
 
     1.onReslult回调的result处理逻辑。
 
-#### 3.3.3 增加权限使用说明弹窗。
+### 3.3.3 增加权限使用说明弹窗。
 
     1.优化startActivity接口。
 
-#### 3.3.1 增加权限使用说明弹窗。
+### 3.3.1 增加权限使用说明弹窗。
 
-#### 3.3.0 修复使用时偶现Bug。
+### 3.3.0 修复使用时偶现Bug。
 
 1. 修复使用时在Fragment中使用Activity创建OkPermission会出现IllegalStateException: FragmentManager is already executing transactions的Bug。
 2. 优化代码逻辑，提升性能增加健壮性、稳定性。
 
-#### 3.2.2 修复使用时偶现Bug。
+### 3.2.2 修复使用时偶现Bug。
 
 修复使用时偶现IllegalStateException: FragmentManager is already executing transactions的Bug。
 
-#### 3.2.1 修复在Fragment中使用时发现的问题。
+### 3.2.1 修复在Fragment中使用时发现的问题。
 
 修复在Fragment中使用时会出现IllegalStateException: FragmentManager is already executing transactions的Bug。
 
-#### 3.1.3 增加自定义GPS权限以后优化代码提高易用性。
+### 3.1.3 增加自定义GPS权限以后优化代码提高易用性。
 
 1.增加自定义权限```OkPermission.permission.GPS```，用法和普通权限一样，支持检测是否已经授权，支持检测并申请(如果用户没有打开GPS开关则会引导用户去开启)。
 
@@ -67,11 +72,11 @@ OkPermission.permission_group.CAMERA_FOR_VIDEO
 OkPermission.permission_group.ACCESS_LOCATION
 ```
 
-#### 3.1.2 适配修改系统设置权限。
+### 3.1.2 适配修改系统设置权限。
 
 增加对```Manifest.permission.WRITE_SETTINGS```权限的适配
 
-#### 3.1.1 OkActivityResult启动页面后支持直接获取Intent。
+### 3.1.1 OkActivityResult启动页面后支持直接获取Intent。
 
 由于在某些场景下我们要启动的页面并不是我们自己的页面，而是系统页面或者是第三方应用的页面，而这种情况下我们只能且必须得到Intent。
 此时我们只需要将泛型设置为Intent即可，栗子：
@@ -85,7 +90,7 @@ OkActivityResult.startActivity<Intent>(activity, Intent(Intent.ACTION_PICK, Medi
 }
 ```
 
-#### 3.1.0 迁移至Androidx并优化代码增加易用性。
+### 3.1.0 迁移至Androidx并优化代码增加易用性。
 
 1.从3.1.0开始，全面迁移至Androidx，如果您的项目还没有迁移至Androidx请使用3.0.4或之前的版本。
 
@@ -96,7 +101,7 @@ OkActivityResult.startActivity<Intent>(activity, Intent(Intent.ACTION_PICK, Medi
 3.为OkActivityResult的startActivity方法和startActivityOrException方法分别增加不需要携带数据的回调重
 载(如果你只需要关心ResultCode不需要带回任何数据可以使用，这样你就无需指定泛型，简化代码书写)。
 
-#### 3.0.4
+### 3.0.4
 
 1.为with方法增加一个参数为Context的重载，将是否为Activity的判断进行内聚。
 
@@ -106,31 +111,31 @@ OkActivityResult.startActivity<Intent>(activity, Intent(Intent.ACTION_PICK, Medi
 
 4.启动Activity后的回调函数中默认不再有Exception，并将方法名更改为"startActivity"和“startActivityOrException”。
 
-#### 3.0.3
+### 3.0.3
 
 修复8.0以下申请通知权限时如果设置了Channel的话会导致多次打开通知权限设置页面的bug。
 
-#### 3.0.2
+### 3.0.2
 
 优化通知权限的申请，将检查权限由回调的方式改为返回的方式。
 
-#### 3.0.1
+### 3.0.1
 
 对外暴露检测权限的接口。
 
-#### 3.0.0
+### 3.0.0
 
 适配悬浮窗权限、通知权限，框架重构，扩展性强。
 
-#### 2.0.4
+### 2.0.4
 
 适配Android8.0的Apk安装权限。
 
-#### 2.0.2
+### 2.0.2
 
 增加自定义弹窗的接口，支持自定义弹窗。
 
-#### 2.0.1
+### 2.0.1
 
 优化权限申请流程。
 
