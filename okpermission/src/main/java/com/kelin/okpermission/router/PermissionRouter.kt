@@ -1,6 +1,5 @@
 package com.kelin.okpermission.router
 
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.ActivityResultLauncher
@@ -21,26 +20,30 @@ import com.kelin.okpermission.permission.PermissionsCallback
 interface PermissionRouter {
 
     companion object {
-        private const val ROUTER_TAG = "ok_permission_apply_permissions_router_tag"
-        fun getAndroidxRouter(fm: FragmentManager, alternativeFm: FragmentManager? = null): PermissionRouter {
+
+        fun getRouter(fm: FragmentManager, alternativeFm: FragmentManager? = null): PermissionRouter {
             return try {
-                (fm.findFragmentByTag(ROUTER_TAG) as? PermissionRouter) ?: AndroidxPermissionRouter().apply {
+                val available = fm.fragments.find {
+                    it is PermissionRouter && !it.isInUse
+                } as? PermissionRouter
+                available ?: DefPermissionRouter().apply {
                     manager = fm
-                    fm.findFragmentByTag(ROUTER_TAG)
                     fm.beginTransaction()
-                        .add(this, ROUTER_TAG)
+                        .add(this, null)
                         .commitAllowingStateLoss()
                     fm.executePendingTransactions()
                 }
             } catch (e: IllegalStateException) {
                 if (alternativeFm != null) {
-                    getAndroidxRouter(alternativeFm)
+                    getRouter(alternativeFm)
                 } else {
                     throw e
                 }
             }
         }
     }
+
+    val isInUse: Boolean
 
     fun requestPermissions(permissions: Array<out Permission>, onResult: PermissionsCallback)
 
@@ -49,7 +52,7 @@ interface PermissionRouter {
     fun recycle()
 }
 
-internal class AndroidxPermissionRouter : AndroidxBasicRouter(), PermissionRouter {
+internal class DefPermissionRouter : AppBasicRouter(), PermissionRouter {
 
     var manager: FragmentManager? = null
 
@@ -58,13 +61,20 @@ internal class AndroidxPermissionRouter : AndroidxBasicRouter(), PermissionRoute
 
     private lateinit var launcher: ActivityResultLauncher<Array<String>>
 
+    override val isInUse: Boolean
+        get() = callback != null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        retainInstance = true
         launcher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-            callback?.invoke(permissionArray?.filter { result[it.permission] != true }?.toTypedArray() ?: emptyArray())
-            callback = null
-            permissionArray = null
+            try {
+                callback?.invoke(permissionArray?.filter { result[it.permission] != true }?.toTypedArray() ?: emptyArray())
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                callback = null
+                permissionArray = null
+            }
         }
     }
 
@@ -83,7 +93,7 @@ internal class AndroidxPermissionRouter : AndroidxBasicRouter(), PermissionRoute
 
     override fun recycle() {
         manager?.run {
-            beginTransaction().remove(this@AndroidxPermissionRouter).commitAllowingStateLoss()
+            beginTransaction().remove(this@DefPermissionRouter).commitAllowingStateLoss()
             executePendingTransactions()
         }
     }

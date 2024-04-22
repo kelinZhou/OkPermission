@@ -1,8 +1,6 @@
 package com.kelin.okpermission.router
 
-import android.os.Bundle
 import androidx.fragment.app.Fragment
-import kotlin.random.Random
 
 /**
  * **描述:** 路由的基类。
@@ -13,12 +11,4 @@ import kotlin.random.Random
  *
  * **版本:** v 1.0.0
  */
-abstract class AppBasicRouter : Fragment() {
-
-    protected val randomGenerator = Random(System.currentTimeMillis())
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        retainInstance = true
-    }
-}
+abstract class AppBasicRouter : Fragment()

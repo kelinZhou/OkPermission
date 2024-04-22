@@ -15,7 +15,7 @@ import com.kelin.okpermission.permission.ActivityResultCallback
 import com.kelin.okpermission.permission.ActivityResultCodeCallback
 import com.kelin.okpermission.permission.ActivityResultDataCallback
 import com.kelin.okpermission.router.ActivityResultRouter
-import com.kelin.okpermission.router.AndroidxBasicRouter
+import com.kelin.okpermission.router.AppBasicRouter
 import java.io.Serializable
 
 /**
@@ -29,7 +29,6 @@ import java.io.Serializable
  */
 object OkActivityResult {
 
-    private const val ROUTER_TAG = "ok_permission_activity_result_router_tag"
     private const val KEY_RESULT_DATA = "ok_permission_activity_result_data"
 
     fun <D> startActivity(
@@ -366,10 +365,10 @@ object OkActivityResult {
     private fun <D> createRouter(activity: Activity): ActivityResultRouter<D> {
         val router: ActivityResultRouter<D>
         if (activity is FragmentActivity) {
-            router = AndroidxActivityResultRouterImpl()
+            router = ActivityResultRouterImpl()
             val fm = activity.supportFragmentManager
             fm.beginTransaction()
-                .add(router, ROUTER_TAG)
+                .add(router, null)
                 .commitAllowingStateLoss()
             try {
                 fm.executePendingTransactions()
@@ -382,32 +381,32 @@ object OkActivityResult {
         return router
     }
 
-    @Suppress("UNCHECKED_CAST", "DEPRECATION")
+    @Suppress("UNCHECKED_CAST")
     private fun <D> findRouter(activity: Activity): ActivityResultRouter<D>? {
         return if (activity is FragmentActivity) {
             try {
-                activity.supportFragmentManager.findFragmentByTag(ROUTER_TAG) as? ActivityResultRouter<D>
+                activity.supportFragmentManager.fragments.find {
+                    it is ActivityResultRouter<*> && !it.isInUse
+                } as? ActivityResultRouter<D>
             } catch (e: Exception) {
                 null
             }
         } else {
-            try {
-                activity.fragmentManager.findFragmentByTag(ROUTER_TAG) as? ActivityResultRouter<D>
-            } catch (e: Exception) {
-                null
-            }
+            throw IllegalAccessException("You have to use the androidx.fragment.app.FragmentActivity to startActivity for result.")
         }
     }
 
-    internal class AndroidxActivityResultRouterImpl<D> : AndroidxBasicRouter(), ActivityResultRouter<D> {
+    internal class ActivityResultRouterImpl<D> : AppBasicRouter(), ActivityResultRouter<D> {
 
         private lateinit var launcher: ActivityResultLauncher<Intent>
 
         private var callback: ActivityResultCallback<D>? = null
 
+        override val isInUse: Boolean
+            get() = callback != null
+
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
-            retainInstance = true
             launcher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 val resultCode = result.resultCode
                 try {

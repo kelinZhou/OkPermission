@@ -15,5 +15,6 @@ import com.kelin.okpermission.permission.ActivityResultCallback
  */
 interface ActivityResultRouter<D> {
 
+    val isInUse: Boolean
     fun startActivityForResult(intent: Intent, options: ActivityOptionsCompat? = null, onResult: ActivityResultCallback<D>)
 }

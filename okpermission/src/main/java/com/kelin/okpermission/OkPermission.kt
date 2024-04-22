@@ -6,8 +6,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.core.content.ContextCompat
-import androidx.core.content.PackageManagerCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import com.kelin.okpermission.applicant.*
@@ -513,11 +511,10 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
 
     private fun getRouter(target: Any): PermissionRouter {
         return when (target) {
-            is FragmentActivity -> target.supportFragmentManager.fragments.firstOrNull()?.let { fragment ->
-                PermissionRouter.getAndroidxRouter(target.supportFragmentManager, fragment.childFragmentManager)
-            } ?: PermissionRouter.getAndroidxRouter(target.supportFragmentManager)
-
-            is Fragment -> PermissionRouter.getAndroidxRouter(target.childFragmentManager)
+            is FragmentActivity -> target.supportFragmentManager.fragments.firstOrNull().let { fragment ->
+                PermissionRouter.getRouter(target.supportFragmentManager, fragment?.childFragmentManager)
+            }
+            is Fragment -> PermissionRouter.getRouter(target.childFragmentManager)
             else -> {
                 throw NullPointerException("The target must be FragmentActivity or Fragment with androidx")
             }
