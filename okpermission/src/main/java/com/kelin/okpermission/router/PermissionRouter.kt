@@ -92,9 +92,13 @@ internal class DefPermissionRouter : AppBasicRouter(), PermissionRouter {
     }
 
     override fun recycle() {
-        manager?.run {
-            beginTransaction().remove(this@DefPermissionRouter).commitAllowingStateLoss()
-            executePendingTransactions()
+        try {
+            manager?.run {
+                beginTransaction().remove(this@DefPermissionRouter).commitAllowingStateLoss()
+                executePendingTransactions()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
