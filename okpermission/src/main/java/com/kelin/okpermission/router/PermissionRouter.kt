@@ -104,7 +104,11 @@ internal class DefPermissionRouter : AppBasicRouter(), PermissionRouter {
         try {
             manager?.run {
                 beginTransaction().remove(this@DefPermissionRouter).commitAllowingStateLoss()
-                executePendingTransactions()
+                try {
+                    executePendingTransactions()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
