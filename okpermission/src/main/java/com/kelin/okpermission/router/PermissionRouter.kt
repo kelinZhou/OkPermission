@@ -20,7 +20,6 @@ import com.kelin.okpermission.permission.PermissionsCallback
 interface PermissionRouter {
 
     companion object {
-
         fun getRouter(fm: FragmentManager, alternativeFm: FragmentManager? = null): PermissionRouter {
             return try {
                 val available = fm.fragments.find {
