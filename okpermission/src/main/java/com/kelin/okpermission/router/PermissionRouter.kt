@@ -36,7 +36,10 @@ interface PermissionRouter {
                     fm.beginTransaction()
                         .add(this, null)
                         .commitAllowingStateLoss()
-                    fm.executePendingTransactions()
+                    try {
+                        fm.executePendingTransactions()
+                    } catch (_: Exception) {
+                    }
                 }
             } catch (e: IllegalStateException) {
                 if (alternativeFm != null) {
@@ -106,8 +109,7 @@ internal class DefPermissionRouter : AppBasicRouter(), PermissionRouter {
                 beginTransaction().remove(this@DefPermissionRouter).commitAllowingStateLoss()
                 try {
                     executePendingTransactions()
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                } catch (_: Exception) {
                 }
             }
         } catch (e: Exception) {

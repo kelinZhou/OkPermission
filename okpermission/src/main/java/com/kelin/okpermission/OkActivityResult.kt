@@ -372,8 +372,7 @@ object OkActivityResult {
                 .commitAllowingStateLoss()
             try {
                 fm.executePendingTransactions()
-            } catch (e: Exception) {
-                e.printStackTrace()
+            } catch (_: Exception) {
             }
         } else {
             throw IllegalAccessException("You have to use the androidx.fragment.app.FragmentActivity to startActivity for result.")
