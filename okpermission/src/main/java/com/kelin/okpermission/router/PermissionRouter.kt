@@ -99,7 +99,9 @@ internal class DefPermissionRouter : AppBasicRouter(), PermissionRouter {
             try {
                 launcher.launch(permissions.map { it.permission }.toTypedArray())
             } catch (_: Exception) {
-                requestPermissions(permissions, onResult)
+                callback = null
+                permissionArray = null
+                onResult(permissions)
             }
         } else {
             onResult(emptyArray())
