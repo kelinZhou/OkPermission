@@ -16,6 +16,11 @@
 
 ## 更新
 
+
+### [3.4.3] - 2024-5-16
+#### Fixed
+- 修复在某为手机上Fragment的事物执行完毕后并没有立即执行Fragment的onCreate声明周期而导致的Bug。
+
 ### [3.3.9] - 2024-4-22
 #### Changed
 - 适配registerForActivityResult。
