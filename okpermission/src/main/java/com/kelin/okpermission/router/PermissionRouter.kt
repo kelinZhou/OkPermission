@@ -98,6 +98,7 @@ internal class DefPermissionRouter : AppBasicRouter(), PermissionRouter {
             permissionArray = permissions
             try {
                 if (isCreated) {
+                    lazyRequest = false
                     launcher.launch(permissions.map { it.permission }.toTypedArray())
                 } else {
                     lazyRequest = true
