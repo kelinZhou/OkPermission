@@ -25,11 +25,6 @@ interface PermissionRouter {
                 val available = fm.fragments.find {
                     it is PermissionRouter && !it.isInUse
                 } as? PermissionRouter
-                if (available != null && !available.available) {
-                    fm.beginTransaction()
-                        .add(available as AppBasicRouter, null)
-                        .commitAllowingStateLoss()
-                }
                 available ?: DefPermissionRouter().apply {
                     manager = fm
                     fm.beginTransaction()
@@ -52,8 +47,6 @@ interface PermissionRouter {
 
     val isInUse: Boolean
 
-    val available: Boolean
-
     fun requestPermissions(permissions: Array<out Permission>, onResult: PermissionsCallback)
 
     fun shouldShowRequestPermissionRationale(permission: String): Boolean
@@ -74,8 +67,6 @@ internal class DefPermissionRouter : AppBasicRouter(), PermissionRouter {
 
     override val isInUse: Boolean
         get() = callback != null
-    override val available: Boolean
-        get() = isAdded
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
