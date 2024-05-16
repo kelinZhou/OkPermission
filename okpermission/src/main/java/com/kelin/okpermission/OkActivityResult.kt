@@ -400,6 +400,8 @@ object OkActivityResult {
         private lateinit var launcher: ActivityResultLauncher<Intent>
 
         private var callback: ActivityResultCallback<D>? = null
+        private var targetIntent: Intent? = null
+        private var targetOption: ActivityOptionsCompat? = null
 
         override val isInUse: Boolean
             get() = callback != null
@@ -408,24 +410,35 @@ object OkActivityResult {
             super.onCreate(savedInstanceState)
             launcher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 val resultCode = result.resultCode
+                val call = callback
+                callback = null
                 try {
                     if (resultCode == Activity.RESULT_OK) {
-                        callback?.invoke(resultCode, result.data?.let { getResultData<D>(it) }, null)
+                        call?.invoke(resultCode, result.data?.let { getResultData<D>(it) }, null)
                     } else {
-                        callback?.invoke(resultCode, null, null)
+                        call?.invoke(resultCode, null, null)
                     }
                 } catch (e: Exception) {
-                    callback?.invoke(resultCode, null, e)
-                } finally {
-                    callback = null
+                    call?.invoke(resultCode, null, e)
                 }
+            }
+            targetIntent?.also { intent ->
+                //因为有调用startActivityForResult时还没有执行onCreate的情况，所以这里处理启动Activity。
+                launcher.launch(intent, targetOption)
+                targetIntent = null
+                targetOption = null
             }
         }
 
         override fun startActivityForResult(intent: Intent, options: ActivityOptionsCompat?, onResult: ActivityResultCallback<D>) {
             try {
-                callback = onResult
-                launcher.launch(intent, options)
+                if (isCreated) {  //因为华为手机会出现到了这里还没执行onCreate的情况，所以这里做个判断。
+                    callback = onResult
+                    launcher.launch(intent, options)
+                } else {  //如果onCreate还没执行则延迟到onCreate之后执行。
+                    targetIntent = intent
+                    targetOption = options
+                }
             } catch (e: Exception) {
                 onResult(Activity.RESULT_CANCELED, null, e)
             }

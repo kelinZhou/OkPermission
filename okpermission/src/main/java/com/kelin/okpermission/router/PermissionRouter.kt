@@ -70,6 +70,8 @@ internal class DefPermissionRouter : AppBasicRouter(), PermissionRouter {
 
     private lateinit var launcher: ActivityResultLauncher<Array<String>>
 
+    private var lazyRequest = false
+
     override val isInUse: Boolean
         get() = callback != null
     override val available: Boolean
@@ -79,12 +81,19 @@ internal class DefPermissionRouter : AppBasicRouter(), PermissionRouter {
         super.onCreate(savedInstanceState)
         launcher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
             try {
-                callback?.invoke(permissionArray?.filter { result[it.permission] != true }?.toTypedArray() ?: emptyArray())
-            } catch (e: Exception) {
-                e.printStackTrace()
-            } finally {
+                val call = callback
+                val permissionData = permissionArray
                 callback = null
                 permissionArray = null
+                call?.invoke(permissionData?.filter { result[it.permission] != true }?.toTypedArray() ?: emptyArray())
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        permissionArray?.also { permissions ->
+            if (lazyRequest) {
+                lazyRequest = false
+                launcher.launch(permissions.map { it.permission }.toTypedArray())
             }
         }
     }
@@ -97,7 +106,11 @@ internal class DefPermissionRouter : AppBasicRouter(), PermissionRouter {
             callback = onResult
             permissionArray = permissions
             try {
-                launcher.launch(permissions.map { it.permission }.toTypedArray())
+                if (isCreated) {
+                    launcher.launch(permissions.map { it.permission }.toTypedArray())
+                } else {
+                    lazyRequest = true
+                }
             } catch (_: Exception) {
                 callback = null
                 permissionArray = null

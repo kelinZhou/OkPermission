@@ -1,5 +1,6 @@
 package com.kelin.okpermission.router
 
+import android.os.Bundle
 import androidx.fragment.app.Fragment
 
 /**
@@ -11,4 +12,17 @@ import androidx.fragment.app.Fragment
  *
  * **版本:** v 1.0.0
  */
-abstract class AppBasicRouter : Fragment()
+abstract class AppBasicRouter : Fragment(){
+    protected var isCreated = false
+        private set
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        isCreated = true
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        isCreated = false
+    }
+}
