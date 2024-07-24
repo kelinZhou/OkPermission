@@ -225,7 +225,7 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
                 }
 
                 else -> {
-                    throw NullPointerException("The target must be FragmentActivity or Fragment with androidx ! current:${target.javaClass.simpleName}")
+                    throw NullPointerException("The target must be FragmentActivity or Fragment with androidx ! current:${target.javaClass.name}")
                 }
             }
         }
