@@ -216,7 +216,7 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
 
         internal fun getActivityByTarget(target: Any): Activity {
             return when (target) {
-                is FragmentActivity -> {
+                is Activity -> {
                     target
                 }
 
