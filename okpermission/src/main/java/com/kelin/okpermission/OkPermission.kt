@@ -51,7 +51,7 @@ class OkPermission private constructor(private val weakTarget: WeakReference<Any
          */
         val CAMERA_FOR_PICTURE_OR_VIDEO by lazy {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.CAMERA)
+                arrayOf(Manifest.permission.CAMERA)
             } else {
                 arrayOf(*EXTERNAL_STORAGE, Manifest.permission.CAMERA)
             }
